@@ -1,15 +1,12 @@
 import { useState } from "react";
 import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
 import { Link } from "react-router-dom";
-import VideoModal from "./videoModal";
 import { all_routes } from "../../../router/all_routes";
 
 const Trust = () => {
-  const [showModal, setShowModal] = useState(false);
-  const videoUrl = "https://youtu.be/NSAOrGb9orM";
+  const [, setShowModal] = useState(false);
 
   const handleOpenModal = () => setShowModal(true);
-  const handleCloseModal = () => setShowModal(false);
 
   const route = all_routes;
   return (

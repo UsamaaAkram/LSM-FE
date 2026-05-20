@@ -1,4 +1,3 @@
-import { all_routes } from "../../router/all_routes";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import { Link } from "react-router-dom";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
@@ -6,8 +5,6 @@ import StudentSidebar from "../common/studentSidebar";
 import ProfileCard from "../common/profileCard";
 
 const StudentOrder = () => {
-  const route = all_routes;
-
   return (
     <>
       <Breadcrumb title="Order History" />

@@ -3,7 +3,6 @@ import Acheivegoal from "../home-five/section/acheive-goal";
 import Banner from "../home-five/section/banner";
 import Callaction from "../home-five/section/call-action";
 import Masterskill from "../home-five/section/master-skill";
-import Onlinecourses from "../home-five/section/online-courses";
 import Footer from "./footer";
 import Testimonials from "./section/testimonials";
 

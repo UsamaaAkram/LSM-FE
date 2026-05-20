@@ -4,11 +4,9 @@ import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import { all_routes } from "../../router/all_routes";
 
 const CourseDetailsTwo = () => {
-  const [showModal, setShowModal] = useState(false);
-  const videoUrl = "https://www.youtube.com/embed/1trvO6dqQUI";
+  const [, setShowModal] = useState(false);
 
   const handleOpenModal = () => setShowModal(true);
-  const handleCloseModal = () => setShowModal(false);
 
   const route = all_routes;
 

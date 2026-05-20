@@ -1,22 +1,10 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { all_routes } from "../../router/all_routes";
 import ProfileCard from "../common/profileCard";
 import StudentSidebar from "../common/studentSidebar";
 
 const StudentCourseResume = () => {
-  const route = all_routes;
-
-  const [selectedItems, setSelectedItems] = useState(Array(10).fill(false));
-  const handleItemClick = (index: number) => {
-    setSelectedItems((prevSelectedItems) => {
-      const updatedSelectedItems = [...prevSelectedItems];
-      updatedSelectedItems[index] = !updatedSelectedItems[index];
-      return updatedSelectedItems;
-    });
-  };
 
   return (
     <>
