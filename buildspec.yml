@@ -18,6 +18,6 @@ phases:
     commands:
       - ls
       - aws s3 sync dist/ s3://$S3_BUCKET
-      - aws cloudfront create-invalidation --distribution-id=$PROD_CLOUDFRONT_DIST --paths '/*'
-      - aws cloudfront create-invalidation --distribution-id=$PROD_CLOUDFRONT_DIST_1 --paths '/*'
+      #- aws cloudfront create-invalidation --distribution-id=$PROD_CLOUDFRONT_DIST --paths '/*'
+      #- aws cloudfront create-invalidation --distribution-id=$PROD_CLOUDFRONT_DIST_1 --paths '/*'
       # - ls
