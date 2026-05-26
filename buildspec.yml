@@ -1,0 +1,23 @@
+version: 0.2
+phases:  
+  pre_build:
+    commands:
+      - ls
+      - n v20
+      - curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+      - echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
+      - apt-get -y update
+      - apt-get -y install google-chrome-stable
+      - yarn install
+      
+  build:
+    commands:
+      - yarn build
+
+  post_build:
+    commands:
+      - ls
+      - aws s3 sync dist/ s3://$S3_BUCKET
+      - aws cloudfront create-invalidation --distribution-id=$PROD_CLOUDFRONT_DIST --paths '/*'
+      - aws cloudfront create-invalidation --distribution-id=$PROD_CLOUDFRONT_DIST_1 --paths '/*'
+      # - ls
