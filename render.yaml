@@ -1,0 +1,25 @@
+# Render Blueprint — Frontend (LSM-FE)
+# React 19 + Vite SPA, deployed as a static site (free, global CDN, auto TLS).
+#
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
+# Set VITE_* to your backend URL BEFORE the first build (Vite inlines them at build time).
+# Start with the backend's onrender.com URL, then switch to your custom domain later
+# and trigger a "Clear build cache & deploy".
+
+services:
+  - type: web
+    name: lms-fe
+    runtime: static
+    region: singapore       # match the backend's region
+    buildCommand: yarn build
+    staticPublishPath: ./dist
+    autoDeploy: true
+    envVars:
+      - key: VITE_API_URL           # your backend, served over HTTPS
+        value: https://api.bluversedigitalhub.com
+      - key: VITE_SOCKET_URL        # same host as VITE_API_URL
+        value: https://api.bluversedigitalhub.com
+    routes:
+      - type: rewrite               # SPA routing: every path serves index.html
+        source: /*
+        destination: /index.html
