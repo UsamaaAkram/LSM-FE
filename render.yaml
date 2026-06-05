@@ -10,7 +10,6 @@ services:
   - type: web
     name: lms-fe
     runtime: static
-    region: singapore       # match the backend's region
     buildCommand: yarn build
     staticPublishPath: ./dist
     autoDeploy: true
