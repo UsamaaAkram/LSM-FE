@@ -6,8 +6,6 @@ import { Button, Form, Modal } from "react-bootstrap";
 import * as Yup from "yup";
 
 import {
-  batchOptions,
-  branchOptions,
   shiftOptions,
   studentTypeOptions,
 } from "../../../core/common/common-list";
@@ -74,29 +72,21 @@ const StudentFilterModal: React.FC<StudentFilterModalProps> = ({
               <Modal.Body>
                 <Form.Group className="mb-3">
                   <Form.Label>Batch</Form.Label>
-                  <Field as="select" name="batch" className="form-select">
-                    <option value="">All</option>
-                    {batchOptions.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </Field>
+                  <Field
+                    name="batch"
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. 1, 2, 3 ... 7"
+                  />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Branch</Form.Label>
                   <Field
-                    as="select"
                     name="enrolledBranch"
-                    className="form-select"
-                  >
-                    <option value="">All</option>
-                    {branchOptions.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </Field>
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. Dunyapur, Bahawalpur"
+                  />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Enrolled By</Form.Label>

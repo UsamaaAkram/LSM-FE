@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { all_routes } from "../../../feature-module/router/all_routes";
-import { logout } from "../../redux/authSlice"; // Correct path for your new slice!
+import { logout, logoutUser } from "../../redux/authSlice"; // Correct path for your new slice!
 // import { setDataTheme } from "../../redux/themeSettingSlice";
 import ImageWithBasePath from "../imageWithBasePath";
 import ImageGlobal from "../ImageGlobal/ImageGlobal";
@@ -20,8 +20,9 @@ const Header = () => {
   //   dispatch(setDataTheme(theme));
   // };
 
-  // Logout handler for backend auth
+  // Logout handler for backend auth — clears the server-side session token too
   const handleLogout = async () => {
+    await dispatch(logoutUser() as any);
     dispatch(logout());
     navigate(all_routes.homeone);
   };
@@ -235,7 +236,7 @@ const Header = () => {
                   to={all_routes.homeone}
                 >
                   <ImageWithBasePath
-                    src="assets/img/blu_light.PNG"
+                    src="assets/img/newLogo.PNG"
                     className="logo"
                     alt="Logo"
                     style={{ height: "70px", width: "auto" }}
@@ -243,7 +244,7 @@ const Header = () => {
                 </Link>
                 <Link className="logo-dark header-logo" to={all_routes.homeone}>
                   <ImageWithBasePath
-                    src="assets/img/blu_dark.PNG"
+                    src="assets/img/newLogo.PNG"
                     className="logo"
                     alt="Logo"
                     style={{ height: "70px", width: "auto" }}
@@ -258,7 +259,7 @@ const Header = () => {
                   to={all_routes.homeone}
                 >
                   <ImageWithBasePath
-                    src="assets/img/blu_light.PNG"
+                    src="assets/img/newLogo.PNG"
                     className="logo"
                     alt="Logo"
                     style={{ height: "50px", width: "auto" }}
@@ -266,7 +267,7 @@ const Header = () => {
                 </Link>
                 <Link className="logo-dark header-logo" to={all_routes.homeone}>
                   <ImageWithBasePath
-                    src="assets/img/blu_dark.PNG"
+                    src="assets/img/newLogo.PNG"
                     className="logo"
                     alt="Logo"
                     style={{ height: "50px", width: "auto" }}

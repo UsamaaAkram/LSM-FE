@@ -53,6 +53,17 @@ const handleSubmit = async (event: React.FormEvent) => {
           ? route.instructorDashboard
           : route.studentDashboard;
     } else if (res.meta.requestStatus === "rejected") {
+      // Unverified email → send the user to the OTP page to verify
+      if (res.payload?.needsVerification) {
+        toast.info(
+          res.payload?.message || "Please verify your email to continue."
+        );
+        const verifyEmailAddr = res.payload?.email || email;
+        window.location.href = `${route.otp}?email=${encodeURIComponent(
+          verifyEmailAddr
+        )}`;
+        return;
+      }
       toast.error(
         res.payload?.message || "Login failed. Please check your credentials."
       );
@@ -74,23 +85,20 @@ const handleSubmit = async (event: React.FormEvent) => {
                 <div className="login-carousel-section mb-3">
                   <div className="login-banner">
                     <ImageWithBasePath
-                      src="assets/img/blu_light.PNG"
+                      src="assets/img/newLogo.PNG"
                       className="logo"
                       alt="Logo"
-                      style={{ height: "270px", width: "auto" }}
+                      style={{ height: "180px", width: "auto" }}
                     />
                   </div>
                   <div className="text-center px-2">
                     <h3 className="mb-2">
-                      Welcome to <br />
-                      Bluverse <span className="text-secondary">LMS</span>{" "}
-                      Courses.
+                      Welcome To <br />
+                      Bluverse <span className="text-secondary">
+                        Digital Hub
+                      </span>
                     </h3>
-                    <p>
-                      Platform designed to help organizations, educators, and
-                      learners manage, deliver, and track learning and training
-                      activities.
-                    </p>
+                    <p>Learn. Earn. Dominate.</p>
                   </div>
                 </div>
               </div>

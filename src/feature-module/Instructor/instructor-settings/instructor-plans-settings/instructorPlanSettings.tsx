@@ -43,12 +43,23 @@ const emptyForm = {
   customerName: "",
   customerEmail: "",
   customerPhone: "",
-  customerCity: "",
+  classType: "",
+  batchNo: "",
   paymentMethod: "",
   paymentStatus: "Pending",
   dueDate: "",
   notes: "",
   discount: "",
+  pendingAmount: "",
+  pendingAmountDate: "",
+};
+
+type SelectedItem = {
+  itemId: string;
+  qty: number;
+  isManual?: boolean;
+  description?: string;
+  unitPrice?: number;
 };
 
 const InstructorPlanSettings = () => {
@@ -63,7 +74,6 @@ const InstructorPlanSettings = () => {
     invoices,
     catalog,
     loading,
-    catalogLoading,
     success,
     error,
   } = useSelector((state: RootState) => state.invoice);
@@ -74,9 +84,9 @@ const InstructorPlanSettings = () => {
     useState<OptionType | null>(null);
   const [selectedPaymentStatus, setSelectedPaymentStatus] =
     useState<OptionType | null>(paymentStatusOptions[0]);
-  const [selectedItems, setSelectedItems] = useState<
-    { itemId: string; qty: number }[]
-  >([]);
+  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
+  const [manualDesc, setManualDesc] = useState<string>("");
+  const [manualAmount, setManualAmount] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
@@ -115,8 +125,35 @@ const InstructorPlanSettings = () => {
   const resetForm = () => {
     setForm(emptyForm);
     setSelectedItems([]);
+    setManualDesc("");
+    setManualAmount("");
     setSelectedPaymentMethod(null);
     setSelectedPaymentStatus(paymentStatusOptions[0]);
+  };
+
+  // ─── Manually charge a custom fee (description + amount) ───
+  const addManualItem = () => {
+    const amount = parseFloat(manualAmount);
+    if (!manualDesc.trim() || isNaN(amount) || amount <= 0) {
+      toast.error("Enter a description and a valid amount for the manual fee");
+      return;
+    }
+    setSelectedItems((prev) => [
+      ...prev,
+      {
+        itemId: "MANUAL",
+        qty: 1,
+        isManual: true,
+        description: manualDesc.trim(),
+        unitPrice: amount,
+      },
+    ]);
+    setManualDesc("");
+    setManualAmount("");
+  };
+
+  const removeItemAt = (index: number) => {
+    setSelectedItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   // ─── Form handlers ───
@@ -124,15 +161,6 @@ const InstructorPlanSettings = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  // ─── Item selection toggle ───
-  const toggleItem = (itemId: string) => {
-    setSelectedItems((prev) => {
-      const exists = prev.find((i) => i.itemId === itemId);
-      if (exists) return prev.filter((i) => i.itemId !== itemId);
-      return [...prev, { itemId, qty: 1 }];
-    });
   };
 
   // ─── Get item price safely ───
@@ -157,17 +185,13 @@ const InstructorPlanSettings = () => {
   const calculateTotal = (): number => {
     let total = 0;
     selectedItems.forEach((sel) => {
+      if (sel.isManual) {
+        total += (sel.unitPrice || 0) * sel.qty;
+        return;
+      }
       const cat = findCatalogItem(sel.itemId);
       if (cat) total += getItemPrice(cat) * sel.qty;
     });
-    // Apply discount
-    if (form.discount) {
-      const discountStr = form.discount.replace("%", "").trim();
-      const discountVal = parseFloat(discountStr);
-      if (!isNaN(discountVal) && discountVal > 0) {
-        total = total - (total * discountVal) / 100;
-      }
-    }
     return Math.max(Math.round(total * 100) / 100, 0);
   };
 
@@ -178,7 +202,7 @@ const InstructorPlanSettings = () => {
       return;
     }
     if (selectedItems.length === 0) {
-      toast.error("Please select at least one item");
+      toast.error("Please add at least one charge");
       return;
     }
     if (!form.paymentMethod) {
@@ -195,13 +219,17 @@ const InstructorPlanSettings = () => {
         customerName: form.customerName,
         customerEmail: form.customerEmail,
         customerPhone: form.customerPhone,
-        customerCity: form.customerCity,
+        classType: form.classType || undefined,
+        batchNo: form.batchNo || undefined,
         items: selectedItems,
         paymentMethod: form.paymentMethod,
         paymentStatus: form.paymentStatus,
         dueDate: form.dueDate,
         notes: form.notes,
-        discount: form.discount || undefined,
+        pendingAmount: form.pendingAmount
+          ? Number(form.pendingAmount)
+          : undefined,
+        pendingAmountDate: form.pendingAmountDate || undefined,
         createdBy: user?._id || "",
       }),
     );
@@ -234,10 +262,8 @@ const InstructorPlanSettings = () => {
 
     const items = getInvoiceItemsWithDetails(viewInvoice);
     const subtotal = items.reduce((sum, i) => sum + i.total, 0);
-    const discountPercent = viewInvoice.discount || 0;
-    const discountAmount = viewInvoice.discountAmount || 0;
     const baseUrl = window.location.origin;
-    const logoUrl = `${baseUrl}/assets/img/blu_light.PNG`;
+    const logoUrl = `${baseUrl}/assets/img/newLogo.PNG`;
     const stampUrl = `${baseUrl}/assets/img/stamp.PNG`;
 
     const statusColor =
@@ -374,14 +400,14 @@ const InstructorPlanSettings = () => {
           <h6>Bluverse Digital Hub</h6>
           <p>Email : bluversedigitalhub@gmail.com</p>
           <p>Phone : 03134339915</p>
-          <p>Landline : 0608-304-657</p>
         </div>
         <div class="party">
           <div class="party-label">To</div>
           <h6>${viewInvoice.customerName}</h6>
-          ${viewInvoice.customerCity ? `<p>City : ${viewInvoice.customerCity}</p>` : ""}
           <p>Email : ${viewInvoice.customerEmail}</p>
           <p>Phone : ${viewInvoice.customerPhone}</p>
+          ${viewInvoice.classType ? `<p>Class Type : ${viewInvoice.classType}</p>` : ""}
+          ${viewInvoice.batchNo ? `<p>Batch No : ${viewInvoice.batchNo}</p>` : ""}
         </div>
         <div class="status-box">
           <div class="party-label">Payment Status</div>
@@ -424,18 +450,19 @@ const InstructorPlanSettings = () => {
             <span>Sub Total</span>
             <span>Rs. ${subtotal.toLocaleString()}</span>
           </div>
-          ${
-            discountAmount > 0
-              ? `<div class="row">
-                  <span>Discount ${discountPercent ? discountPercent + "%" : ""}</span>
-                  <span>- Rs. ${discountAmount.toLocaleString()}</span>
-                </div>`
-              : ""
-          }
           <div class="row border-top">
             <span>Total Amount</span>
             <span>Rs. ${typeof viewInvoice.totalAmount === "number" ? viewInvoice.totalAmount.toLocaleString() : "—"}</span>
           </div>
+          ${
+            viewInvoice.pendingAmount && viewInvoice.pendingAmount > 0
+              ? `<div class="row"><span>Pending Amount</span><span>Rs. ${viewInvoice.pendingAmount.toLocaleString()}</span></div>${
+                  viewInvoice.pendingAmountDate
+                    ? `<div class="row"><span>Pending By</span><span>${moment(viewInvoice.pendingAmountDate).format("MMM DD, YYYY")}</span></div>`
+                    : ""
+                }`
+              : ""
+          }
         </div>
       </div>
 
@@ -452,21 +479,14 @@ const InstructorPlanSettings = () => {
           }
           <div class="terms">
             <h6>Terms & Conditions – Bluverse Digital Hub</h6>
-            <p>
-                - All fees are non-refundable under any circumstances.
-                <br />
-                - Course access is granted as per your selected Lifetime
-                plan.
-                <br />
-                - Account sharing is strictly prohibited and may result in
-                permanent suspension.
-                <br />
-                - Content misuse, reselling, or piracy will lead to legal
-                action.
-                <br />
-                - Students are responsible for submitting accurate
-                enrollment information.
-              </p>
+            <ul style="margin:0; padding-left:16px;">
+              <li>All fees are non-refundable and non-transferable.</li>
+              <li>Course access is granted according to the selected plan.</li>
+              <li>Account sharing is strictly prohibited and may result in suspension.</li>
+              <li>Content redistribution, resale, or piracy may lead to legal action.</li>
+              <li>Students must provide accurate enrollment information.</li>
+              <li>Bluverse Digital Hub reserves the right to suspend access for policy violations.</li>
+            </ul>
           </div>
         </div>
         <div class="signature">
@@ -520,11 +540,16 @@ const InstructorPlanSettings = () => {
     if (!inv.items) return [];
     return inv.items.map((item) => {
       const cat = findCatalogItem(item.itemId);
+      // Prefer the values persisted on the invoice (course name, unit price,
+      // line total) so receipts show real course details — including manual
+      // fees — instead of falling back to a raw itemId like "ITEM_1".
+      const price = item.unitPrice ?? (cat ? getItemPrice(cat) : 0);
+      const total = item.total ?? price * item.qty;
       return {
         ...item,
-        name: cat?.name || item.itemId,
-        price: cat ? getItemPrice(cat) : 0,
-        total: cat ? getItemPrice(cat) * item.qty : 0,
+        name: item.description || cat?.name || item.itemId,
+        price,
+        total,
       };
     });
   };
@@ -815,14 +840,31 @@ const InstructorPlanSettings = () => {
                 </div>
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">City</label>
+                    <label className="form-label">
+                      Class Type <small className="text-muted">(optional)</small>
+                    </label>
                     <input
                       type="text"
                       className="form-control"
-                      name="customerCity"
-                      value={form.customerCity}
+                      name="classType"
+                      value={form.classType}
                       onChange={handleInputChange}
-                      placeholder="e.g. Lahore"
+                      placeholder="e.g. Online, On-Site"
+                    />
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Batch No <small className="text-muted">(optional)</small>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="batchNo"
+                      value={form.batchNo}
+                      onChange={handleInputChange}
+                      placeholder="e.g. 1, 2, 3 ... 7"
                     />
                   </div>
                 </div>
@@ -894,18 +936,112 @@ const InstructorPlanSettings = () => {
                 <div className="col-md-6">
                   <div className="mb-3">
                     <label className="form-label">
-                      Discount <small className="text-muted">(optional)</small>
+                      Pending Amount{" "}
+                      <small className="text-muted">(optional)</small>
                     </label>
                     <input
-                      type="text"
+                      type="number"
                       className="form-control"
-                      name="discount"
-                      value={form.discount}
+                      name="pendingAmount"
+                      value={form.pendingAmount}
                       onChange={handleInputChange}
-                      placeholder="e.g. 10"
+                      placeholder="e.g. 5000"
                     />
                   </div>
                 </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Pending Amount Date{" "}
+                      <small className="text-muted">(optional)</small>
+                    </label>
+                    <div className="input-icon position-relative calender-input">
+                      <span className="input-icon-addon">
+                        <i className="isax isax-calendar z-1" />
+                      </span>
+                      <DatePicker
+                        className="form-control datetimepicker"
+                        getPopupContainer={getModalContainer}
+                        placeholder="Select pending date"
+                        onChange={(_date, dateString) =>
+                          setForm({
+                            ...form,
+                            pendingAmountDate: dateString as string,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+                {/* ─── Charges (manual line items, editable price) ─── */}
+                <div className="col-md-12">
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Charge Fee <span className="text-danger">*</span>
+                    </label>
+                    <p className="text-muted fs-12 mb-2">
+                      Add each charge with a description and an editable amount.
+                    </p>
+                    <div className="row g-2 align-items-end">
+                      <div className="col-md-6">
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={manualDesc}
+                          onChange={(e) => setManualDesc(e.target.value)}
+                          placeholder="Fee description (e.g. Registration Fee)"
+                        />
+                      </div>
+                      <div className="col-md-4">
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={manualAmount}
+                          onChange={(e) => setManualAmount(e.target.value)}
+                          placeholder="Amount"
+                        />
+                      </div>
+                      <div className="col-md-2">
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary w-100"
+                          onClick={addManualItem}
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                    {selectedItems.some((s) => s.isManual) && (
+                      <ul className="list-unstyled mt-2 mb-0">
+                        {selectedItems.map((s, idx) =>
+                          s.isManual ? (
+                            <li
+                              key={`manual-${idx}`}
+                              className="d-flex align-items-center justify-content-between p-2 mb-1 rounded border"
+                            >
+                              <span className="fw-medium">
+                                {s.description}
+                              </span>
+                              <span className="d-flex align-items-center gap-2">
+                                <span className="fw-semibold">
+                                  Rs. {(s.unitPrice || 0).toLocaleString()}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-link text-danger p-0"
+                                  onClick={() => removeItemAt(idx)}
+                                >
+                                  <i className="isax isax-trash" />
+                                </button>
+                              </span>
+                            </li>
+                          ) : null,
+                        )}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
                 <div className="col-md-12">
                   <div className="mb-3">
                     <label className="form-label">Notes</label>
@@ -920,78 +1056,6 @@ const InstructorPlanSettings = () => {
                   </div>
                 </div>
 
-                {/* ─── Item Catalog Selection (Fixed NaN) ─── */}
-                <div className="col-md-12">
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Select Items <span className="text-danger">*</span>
-                    </label>
-                    {catalogLoading ? (
-                      <div className="text-center py-3">
-                        <span className="spinner-border spinner-border-sm" />
-                        <span className="ms-2">Loading catalog...</span>
-                      </div>
-                    ) : catalog.length === 0 ? (
-                      <p className="text-muted">No catalog items available.</p>
-                    ) : (
-                      <div
-                        className="border rounded p-3"
-                        style={{ maxHeight: 250, overflowY: "auto" }}
-                      >
-                        {catalog.map((item: CatalogItem) => {
-                          const itemKey = item.itemId || item._id;
-                          const isSelected = selectedItems.some(
-                            (s) => s.itemId === itemKey,
-                          );
-
-                          const price = getItemPrice(item);
-
-                          return (
-                            <div
-                              key={item._id || item.itemId}
-                              className={`d-flex align-items-center justify-content-between p-2 mb-2 rounded border ${
-                                isSelected
-                                  ? "border-primary bg-primary text-primary bg-opacity-10"
-                                  : ""
-                              }`}
-                              style={{
-                                cursor: "pointer",
-                                transition: "all 0.2s",
-                              }}
-                            >
-                              <div
-                                className="d-flex align-items-center flex-grow-1"
-                                onClick={() => toggleItem(itemKey)}
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="form-check-input me-2"
-                                  checked={isSelected}
-                                  readOnly
-                                />
-                                <div>
-                                  <span className="fw-medium">{item.name}</span>
-                                  {item.description && (
-                                    <small className="text-muted d-block">
-                                      {item.description}
-                                    </small>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="d-flex align-items-center gap-2">
-                                <span className="fw-semibold text-nowrap">
-                                  Rs.{" "}
-                                  {price > 0 ? price.toLocaleString() : "N/A"}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 {/* ─── Total Preview (Fixed NaN) ─── */}
                 {selectedItems.length > 0 && (
                   <div className="col-md-12">
@@ -999,13 +1063,8 @@ const InstructorPlanSettings = () => {
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
                           <span className="text-muted">
-                            {selectedItems.length} item(s) selected
+                            {selectedItems.length} charge(s) added
                           </span>
-                          {form.discount && (
-                            <span className="ms-2 badge bg-warning text-dark">
-                              Discount: {form.discount.replace("%", "").trim()}%
-                            </span>
-                          )}
                         </div>
                         <h5 className="mb-0">
                           Total: Rs. {calculateTotal().toLocaleString()}
@@ -1083,7 +1142,7 @@ const InstructorPlanSettings = () => {
                       <div className="col-md-6">
                         <div className="mb-2 invoice-logo-white">
                           <ImageWithBasePath
-                            src="assets/img/blu_light.PNG"
+                            src="assets/img/newLogo.PNG"
                             width={100}
                           />
                         </div>
@@ -1135,28 +1194,30 @@ const InstructorPlanSettings = () => {
                           <p className="fs-14 mb-1">
                             Phone : <Link to="#">03134339915</Link>
                           </p>
-                          <p className="fs-14 mb-1">
-                            Landline : <Link to="#">0608-304-657</Link>
-                          </p>
                         </div>
                       </div>
                       <div className="col-lg-5">
                         <span className="mb-3 d-flex">To</span>
                         <div>
                           <h6 className="mb-2">{viewInvoice.customerName}</h6>
-                          {viewInvoice.customerCity && (
-                            <p className="fs-14 mb-1">
-                              City : {viewInvoice.customerCity}
-                            </p>
-                          )}
                           <p className="fs-14 mb-1">
                             Email :{" "}
                             <Link to="#">{viewInvoice.customerEmail}</Link>
                           </p>
-                          <p className="fs-14">
+                          <p className="fs-14 mb-1">
                             Phone :{" "}
                             <Link to="#">{viewInvoice.customerPhone}</Link>
                           </p>
+                          {viewInvoice.classType && (
+                            <p className="fs-14 mb-1">
+                              Class Type : {viewInvoice.classType}
+                            </p>
+                          )}
+                          {viewInvoice.batchNo && (
+                            <p className="fs-14">
+                              Batch No : {viewInvoice.batchNo}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="col-lg-2">
@@ -1245,20 +1306,6 @@ const InstructorPlanSettings = () => {
                               .toLocaleString()}
                           </p>
                         </div>
-                        {/* Discount */}
-                        <div className="d-flex justify-content-between align-items-center border-bottom my-2 pb-2 pe-3">
-                          <p className="mb-0">
-                            Discount{" "}
-                            <span className="text-bold">
-                              {viewInvoice?.discount || "0"}%
-                            </span>
-                          </p>
-                          <p className="text-gray-9 fs-14 fw-medium mb-0">
-                            - Rs.{" "}
-                            {viewInvoice?.discountAmount?.toLocaleString() ||
-                              "0"}
-                          </p>
-                        </div>
                         {/* Total Amount */}
                         <div className="d-flex justify-content-between align-items-center mb-2 pe-3 mt-2">
                           <h6 className="fs-16">Total Amount</h6>
@@ -1269,6 +1316,24 @@ const InstructorPlanSettings = () => {
                               : "—"}
                           </h6>
                         </div>
+                        {/* Pending Amount */}
+                        {viewInvoice.pendingAmount != null &&
+                          viewInvoice.pendingAmount > 0 && (
+                            <div className="d-flex justify-content-between align-items-center my-2 pe-3">
+                              <p className="text-gray mb-0">
+                                Pending Amount
+                                {viewInvoice.pendingAmountDate
+                                  ? ` (by ${moment(
+                                      viewInvoice.pendingAmountDate,
+                                    ).format("MMM DD, YYYY")})`
+                                  : ""}
+                              </p>
+                              <p className="text-gray-9 fw-medium mb-0">
+                                Rs.{" "}
+                                {viewInvoice.pendingAmount.toLocaleString()}
+                              </p>
+                            </div>
+                          )}
                       </div>
                     </div>
                   </div>
@@ -1286,20 +1351,28 @@ const InstructorPlanSettings = () => {
                         <h6 className="mb-1 fs-16">
                           Terms & Conditions – Bluverse Digital Hub
                         </h6>
-                        <p>
-                          - All fees are non-refundable under any circumstances.
-                          <br />
-                          - Course access is granted as per your selected
-                          Lifetime plan.
-                          <br />
-                          - Account sharing is strictly prohibited and may
-                          result in permanent suspension.
-                          <br />
-                          - Content misuse, reselling, or piracy will lead to
-                          legal action.
-                          <br />- Students are responsible for submitting
-                          accurate enrollment information.
-                        </p>
+                        <ul className="ps-3 mb-0">
+                          <li>All fees are non-refundable and non-transferable.</li>
+                          <li>
+                            Course access is granted according to the selected
+                            plan.
+                          </li>
+                          <li>
+                            Account sharing is strictly prohibited and may result
+                            in suspension.
+                          </li>
+                          <li>
+                            Content redistribution, resale, or piracy may lead to
+                            legal action.
+                          </li>
+                          <li>
+                            Students must provide accurate enrollment information.
+                          </li>
+                          <li>
+                            Bluverse Digital Hub reserves the right to suspend
+                            access for policy violations.
+                          </li>
+                        </ul>
                       </div>
                     </div>
                     <div className="col-md-3">

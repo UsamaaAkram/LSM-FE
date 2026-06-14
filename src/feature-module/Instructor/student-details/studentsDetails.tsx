@@ -20,8 +20,6 @@ import { fetchCourses } from "../../../core/redux/courses";
 import moment from "moment";
 import { toast } from "react-toastify";
 import {
-  batchOptions,
-  branchOptions,
   genderOptions,
   shiftOptions,
   studentTypeOptions,
@@ -95,8 +93,8 @@ const StudentsDetails = () => {
       .of(Yup.string())
       .min(1, "Select at least one course!")
       .required("Select at least one course!"),
-    batch: Yup.string().required("Batch is required"),
-    enrolledBranch: Yup.string().required("Branch is required"),
+    batch: Yup.string(),
+    enrolledBranch: Yup.string(),
     studentType: Yup.string().required("Student type is required"),
     shift: Yup.string().required("Shift is required"),
     guardian_relation: Yup.string().when("isGuardian", {
@@ -387,19 +385,13 @@ const StudentsDetails = () => {
                     <div className="card-body">
                       <div className="row mb-2">
                         <div className="col-md-3 mb-3">
-                          <label className="form-label">Branch *</label>
+                          <label className="form-label">Branch</label>
                           <Field
-                            as="select"
+                            type="text"
                             name="enrolledBranch"
-                            className="form-select"
-                          >
-                            <option value="">Select</option>
-                            {branchOptions.map((opt) => (
-                              <option value={opt} key={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </Field>
+                            className="form-control"
+                            placeholder="e.g. Dunyapur, Bahawalpur"
+                          />
                           {touched.enrolledBranch && errors.enrolledBranch && (
                             <div className="text-danger">
                               {errors.enrolledBranch}
@@ -464,19 +456,13 @@ const StudentsDetails = () => {
                         </div>
 
                         <div className="col-md-3 mb-3">
-                          <label className="form-label">Batch *</label>
+                          <label className="form-label">Batch</label>
                           <Field
-                            as="select"
+                            type="text"
                             name="batch"
-                            className="form-select"
-                          >
-                            <option value="">Select</option>
-                            {batchOptions.map((opt) => (
-                              <option value={opt} key={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </Field>
+                            className="form-control"
+                            placeholder="e.g. 1, 2, 3 ... 7"
+                          />
                           {touched.batch && errors.batch && (
                             <div className="text-danger">{errors.batch}</div>
                           )}

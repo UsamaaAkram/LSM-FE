@@ -12,6 +12,8 @@ import {
   addToWishlist,
   removeFromWishlist,
 } from "../../../core/redux/studentSlice";
+import { fetchStudentEnrolledCourses } from "../../../core/redux/studentCoursesSlice";
+import { WHATSAPP_ENROLL } from "../../../core/common/bluverseLinks";
 import { toast } from "react-toastify";
 import type { AppDispatch, RootState } from "../../../core/redux/store";
 
@@ -28,6 +30,9 @@ const CourseDetails = () => {
     (state: any) =>
       state.courses || { currentCourse: null, loading: false, error: null }
   );
+  const enrolledCourses = useSelector(
+    (state: any) => state.studentCourses?.courses || []
+  );
 
   const [showModal, setShowModal] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -37,6 +42,13 @@ const CourseDetails = () => {
       dispatch(fetchCourseById(id) as any);
     }
   }, [dispatch, id]);
+
+  // Load the student's enrolled courses so we can gate access (paid vs not)
+  useEffect(() => {
+    if (auth?.role === "student" && auth?._id) {
+      dispatch(fetchStudentEnrolledCourses(auth._id) as any);
+    }
+  }, [dispatch, auth?._id, auth?.role]);
 
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
@@ -60,6 +72,10 @@ const CourseDetails = () => {
     if (secs) parts.push(`${secs} sec`);
     return parts.join(" ");
   }
+
+  const isEnrolled: boolean = Array.isArray(enrolledCourses)
+    ? enrolledCourses.some((c: any) => c._id === currentCourse._id)
+    : false;
 
   const isWishlisted: any = auth?.wishlist?.includes(currentCourse._id);
   const handleWishlist = async () => {
@@ -263,12 +279,23 @@ const CourseDetails = () => {
                             ? "Remove to Wishlist"
                             : "Add to Wishlist"}
                         </button>
-                        <Link
-                          to={`${route.courseWatch}?id=${currentCourse._id}&&std=${auth?._id}`}
-                          className="btn btn-primary w-100 btn-enroll"
-                        >
-                          Watch Now
-                        </Link>
+                        {isEnrolled ? (
+                          <Link
+                            to={`${route.courseWatch}?id=${currentCourse._id}&&std=${auth?._id}`}
+                            className="btn btn-primary w-100 btn-enroll"
+                          >
+                            Watch Now
+                          </Link>
+                        ) : (
+                          <a
+                            href={WHATSAPP_ENROLL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-primary w-100 btn-enroll"
+                          >
+                            Enroll Now
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>

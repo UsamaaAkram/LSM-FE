@@ -7,10 +7,7 @@ import DefaultEditor from "react-simple-wysiwyg";
 import { toast } from "react-toastify";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import CustomSelect from "../../../core/common/commonSelect";
-import {
-  CourseLevel,
-  CourseVideo,
-} from "../../../core/common/selectOption/json/selectOption";
+import { CourseLevel } from "../../../core/common/selectOption/json/selectOption";
 import { fetchCourseById, updateCourse } from "../../../core/redux/courses";
 import { all_routes } from "../../router/all_routes";
 
@@ -42,21 +39,23 @@ const EditCourse: React.FC = () => {
   const [courseDescription, setCourseDescription] = useState("");
   const [courseThumbnail, setCourseThumbnail] = useState<File | null>(null);
   const [courseThumbnailUrl, setCourseThumbnailUrl] = useState("");
-  const [courseVideoProvider, setCourseVideoProvider] = useState<
-    string | number
-  >("");
-  const [courseVideoUrl, setCourseVideoUrl] = useState("");
   const [duration, setDuration] = useState<string>("");
   const [curriculum, setCurriculum] = useState<
     {
       topic: string;
-      lessons: { name: string; videoUrl: string; description: string }[];
+      lessons: {
+        name: string;
+        videoUrl: string;
+        vdoId: string;
+        description: string;
+      }[];
     }[]
   >([]);
   const [currentTopic, setCurrentTopic] = useState("");
   const [currentLesson, setCurrentLesson] = useState({
     name: "",
     videoUrl: "",
+    vdoId: "",
     description: "",
   });
   const [editTopicIdx, setEditTopicIdx] = useState<number | null>(null);
@@ -85,9 +84,19 @@ const EditCourse: React.FC = () => {
       setCourseLevel(currentCourse.courseLevel || "");
       setCourseDescription(currentCourse.courseDescription || "");
       setCourseThumbnailUrl(currentCourse.courseThumbnailUrl || "");
-      setCourseVideoProvider(currentCourse.courseVideoProvider || "");
-      setCourseVideoUrl(currentCourse.courseVideoUrl || "");
-      setCurriculum(currentCourse.curriculum || []);
+      // Normalize lessons so every lesson has a vdoId field (older courses lack it)
+      setCurriculum(
+        (currentCourse.curriculum || []).map((t: any) => ({
+          ...t,
+          lessons: (t.lessons || []).map((l: any) => ({
+            name: l.name || "",
+            videoUrl: l.videoUrl || "",
+            vdoId: l.vdoId || "",
+            description: l.description || "",
+            ...(l._id ? { _id: l._id } : {}),
+          })),
+        }))
+      );
       setNotes(currentCourse.notes || "");
       setFilterStatus(currentCourse.status || undefined);
       setDuration(currentCourse.duration || "");
@@ -115,10 +124,6 @@ const EditCourse: React.FC = () => {
     } else if (step === 2) {
       if (!courseThumbnail && !courseThumbnailUrl)
         stepErrors.courseThumbnail = "Course Thumbnail is required";
-      if (!courseVideoProvider)
-        stepErrors.courseVideoProvider = "Course Video Provider is required";
-      if (!courseVideoUrl.trim())
-        stepErrors.courseVideoUrl = "Course Video URL is required";
     }
     setErrors(stepErrors);
     return Object.keys(stepErrors).length === 0;
@@ -180,7 +185,7 @@ const EditCourse: React.FC = () => {
   };
   const handleAddLesson = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!currentLesson.name.trim() || !currentLesson.videoUrl.trim()) return;
+    if (!currentLesson.name.trim() || !currentLesson.vdoId.trim()) return;
     if (selectedTopicIndex === null) return;
 
     if (editLessonIdx) {
@@ -204,7 +209,7 @@ const EditCourse: React.FC = () => {
       );
       setCurriculum(newCurriculum);
     }
-    setCurrentLesson({ name: "", videoUrl: "", description: "" });
+    setCurrentLesson({ name: "", videoUrl: "", vdoId: "", description: "" });
     setShowLessonModal(false);
   };
   const handleDeleteLesson = (ti: number, li: number) => {
@@ -237,8 +242,6 @@ const EditCourse: React.FC = () => {
       courseDescription,
       courseThumbnail,
       courseThumbnailUrl,
-      courseVideoProvider,
-      courseVideoUrl,
       curriculum,
       notes,
       studentCount: currentCourse?.studentCount || 0,
@@ -573,57 +576,6 @@ const EditCourse: React.FC = () => {
                               )}
                             </div>
                           </div>
-                          <div className="col-md-4">
-                            <div className="input-block-link">
-                              <label className="form-label">
-                                Course Video{" "}
-                                <span className="text-danger ms-1">*</span>
-                              </label>
-                              <CustomSelect
-                                options={CourseVideo}
-                                className="select"
-                                placeholder="Select"
-                                value={CourseVideo.find(
-                                  (opt) => opt.value === courseVideoProvider
-                                )}
-                                onChange={(selected) => {
-                                  if (errors.courseVideoProvider)
-                                    setErrors((prev) => ({
-                                      ...prev,
-                                      courseVideoProvider: "",
-                                    }));
-                                  setCourseVideoProvider(
-                                    String(selected?.value ?? "")
-                                  );
-                                }}
-                              />
-                              {errors.courseVideoProvider && (
-                                <div className="text-danger">
-                                  {errors.courseVideoProvider}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="col-md-8">
-                            <div className="input-block-link">
-                              <label className="form-label">&nbsp;</label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                placeholder="External URL Link"
-                                value={courseVideoUrl}
-                                onChange={handleChangeWithClearError(
-                                  "courseVideoUrl",
-                                  setCourseVideoUrl
-                                )}
-                              />
-                              {errors.courseVideoUrl && (
-                                <div className="text-danger">
-                                  {errors.courseVideoUrl}
-                                </div>
-                              )}
-                            </div>
-                          </div>
                         </div>
                         <div className="add-form-btn widget-next-btn submit-btn">
                           <div className="btn-left">
@@ -776,6 +728,7 @@ const EditCourse: React.FC = () => {
                                               setCurrentLesson({
                                                 name: "",
                                                 videoUrl: "",
+                                                vdoId: "",
                                                 description: "",
                                               });
                                               setShowLessonModal(true);
@@ -997,20 +950,25 @@ const EditCourse: React.FC = () => {
                 </div>
                 <div className="input-block mb-4">
                   <label className="form-label">
-                    Video link<span className="text-danger ms-1">*</span>
+                    VdoCipher Video ID
+                    <span className="text-danger ms-1">*</span>
                   </label>
                   <input
                     type="text"
                     className="form-control"
-                    value={currentLesson.videoUrl}
+                    placeholder="Paste the video ID from your VdoCipher dashboard"
+                    value={currentLesson.vdoId}
                     onChange={(e) =>
                       setCurrentLesson({
                         ...currentLesson,
-                        videoUrl: e.target.value,
+                        vdoId: e.target.value,
                       })
                     }
-                    required
                   />
+                  <small className="text-muted">
+                    DRM-protected playback (blocks screen recording &amp;
+                    downloads).
+                  </small>
                 </div>
                 <div className="input-block mb-4">
                   <label className="form-label">Course Description</label>

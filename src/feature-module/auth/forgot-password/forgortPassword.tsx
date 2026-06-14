@@ -1,17 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
 import { all_routes } from "../../router/all_routes";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+import { forgotPassword } from "../../../core/redux/authSlice";
 import Slider from "react-slick";
 
 const ForgortPassword = () => {
 
     const route = all_routes;
     const navigate = useNavigate();
-    const handleSubmit = (event: React.FormEvent) => {
-        event.preventDefault(); 
-        const Path = route.setpassowrd; 
-        navigate(Path);
+    const dispatch = useDispatch();
+    const [email, setEmail] = useState<string>("");
+    const [submitting, setSubmitting] = useState<boolean>(false);
+
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        if (!email) {
+          toast.error("Please enter your email.");
+          return;
+        }
+        setSubmitting(true);
+        const res: any = await dispatch(forgotPassword({ email }) as any);
+        setSubmitting(false);
+        if (res.meta.requestStatus === "fulfilled") {
+          toast.success("If the email exists, a reset code has been sent.");
+          navigate(`${route.setpassowrd}?email=${encodeURIComponent(email)}`);
+        } else {
+          toast.error(res.payload || "Could not send reset code.");
+        }
       };
     const loginSLider = {
         dots: true,
@@ -35,23 +53,19 @@ const ForgortPassword = () => {
                   <div className="login-carousel-section mb-3">
                     <div className="login-banner">
                       <ImageWithBasePath
-                        src="assets/img/blu_light.PNG"
+                        src="assets/img/newLogo.PNG"
                         className="logo"
                         alt="Logo"
-                        style={{ height: "270px", width: "auto" }}
+                        style={{ height: "180px", width: "auto" }}
                       />
                     </div>
                     <div className="mentor-course text-center">
                       <h3 className="mb-2">
-                        Welcome to <br />
-                        Bluverse<span className="text-secondary">LMS</span>{" "}
-                        Courses.
+                        Welcome To <br />
+                        Bluverse{" "}
+                        <span className="text-secondary">Digital Hub</span>
                       </h3>
-                      <p>
-                        Platform designed to help organizations, educators, and
-                        learners manage, deliver, and track learning and
-                        training activities.
-                      </p>
+                      <p>Learn. Earn. Dominate.</p>
                     </div>
                   </div>
                 </div>
@@ -134,6 +148,9 @@ const ForgortPassword = () => {
                           <input
                             type="email"
                             className="form-control form-control-lg"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
                           />
                           <span>
                             <i className="isax isax-sms input-icon text-gray-7 fs-14" />
@@ -144,8 +161,9 @@ const ForgortPassword = () => {
                         <button
                           className="btn btn-secondary btn-lg"
                           type="submit"
+                          disabled={submitting}
                         >
-                          Submit
+                          {submitting ? "Sending..." : "Submit"}
                           <i className="isax isax-arrow-right-3 ms-1" />
                         </button>
                       </div>

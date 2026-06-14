@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { studentSidebarData } from "../../../core/common/data/json/student-sidebar";
 import { all_routes } from "../../router/all_routes";
-import { logout } from "../../../core/redux/authSlice";
+import { logout, logoutUser } from "../../../core/redux/authSlice";
 import { useDispatch } from "react-redux";
 
 const StudentSidebar = () => {
@@ -10,6 +10,7 @@ const StudentSidebar = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    await dispatch(logoutUser() as any);
     dispatch(logout());
     navigate(all_routes.homeone);
   };

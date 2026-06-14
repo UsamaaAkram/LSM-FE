@@ -8,6 +8,7 @@ const Base_URL = `${API_URL}/api/courses`;
 export interface Lesson {
   name: string;
   videoUrl: string;
+  vdoId?: string; // VdoCipher video id (DRM playback)
   description: string;
   _id?: string;
 }
@@ -24,8 +25,8 @@ export interface Course {
   courseDescription: string;
   courseThumbnailUrl?: string; // For preview
   courseThumbnail?: File | null; // For upload
-  courseVideoProvider: string | number;
-  courseVideoUrl: string;
+  courseVideoProvider?: string | number;
+  courseVideoUrl?: string;
   curriculum: Topic[];
   notes: string;
   status?: string;

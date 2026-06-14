@@ -1,5 +1,5 @@
 import moment from "moment";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation } from "react-router-dom";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
@@ -22,6 +22,7 @@ import DefaultEditor from "react-simple-wysiwyg";
 import { toast } from "react-toastify";
 import type { AppDispatch } from "../../../core/redux/store";
 import VideoPlayer from "../../HomePages/home-one/section/videoPlayer";
+import VdoPlayer from "../../../core/common/video/vdoPlayer";
 import { all_routes } from "../../router/all_routes";
 
 function useQuery() {
@@ -99,7 +100,8 @@ const CourseWatch = () => {
 
   // Save watch progress for the CURRENT lesson
   const saveWatchProgress = async () => {
-    if (!lesson?._id) return;
+    // Need a lesson and a known duration; nothing to save if not watched yet.
+    if (!lesson?._id || !duration || watchedSegments.length === 0) return;
 
     if (!isUpdating) {
       await dispatch(
@@ -117,6 +119,8 @@ const CourseWatch = () => {
           },
         })
       );
+      // Subsequent saves for this lesson should update, not re-create.
+      setIsUpdating(true);
     } else {
       await dispatch(
         updateLessonWatched({
@@ -139,6 +143,28 @@ const CourseWatch = () => {
       );
     }
   };
+
+  // Keep a ref to the latest save fn so the interval / unmount / unload
+  // handlers always call the current closure (fresh segments & duration).
+  const saveRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    saveRef.current = saveWatchProgress;
+  });
+
+  // Autosave progress while watching, on tab close, and on unmount — so a
+  // single-lesson course (no lesson switch) still records progress.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      saveRef.current?.();
+    }, 10000);
+    const onBeforeUnload = () => saveRef.current?.();
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      saveRef.current?.();
+    };
+  }, []);
 
   // const handleCloseVideo = async () => {
   //   await saveWatchProgress();
@@ -349,15 +375,28 @@ const CourseWatch = () => {
                 <div className="course-watch-content">
                   {showVideo ? (
                     <div className="mb-4">
-                      <VideoPlayer
-                        key={activeLesson || videoUrl}
-                        videoUrl={videoUrl}
-                        setWatchedSegments={setWatchedSegments}
-                        watchedSegments={watchedSegments}
-                        duration={duration}
-                        setDuration={setDuration}
-                        completed={!!lessonWatched?.completed}
-                      />
+                      {lesson?.vdoId ? (
+                        <VdoPlayer
+                          key={activeLesson || lesson.vdoId}
+                          vdoId={lesson.vdoId}
+                          courseId={id}
+                          setWatchedSegments={setWatchedSegments}
+                          watchedSegments={watchedSegments}
+                          duration={duration}
+                          setDuration={setDuration}
+                          completed={!!lessonWatched?.completed}
+                        />
+                      ) : (
+                        <VideoPlayer
+                          key={activeLesson || videoUrl}
+                          videoUrl={videoUrl}
+                          setWatchedSegments={setWatchedSegments}
+                          watchedSegments={watchedSegments}
+                          duration={duration}
+                          setDuration={setDuration}
+                          completed={!!lessonWatched?.completed}
+                        />
+                      )}
                     </div>
                   ) : (
                     <div className="position-relative video-btn mb-4">

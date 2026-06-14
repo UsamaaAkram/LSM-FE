@@ -1,9 +1,15 @@
-import {  Input } from "antd";
+import { Input } from "antd";
 import React, { useEffect, useState } from "react";
 import Slider from "react-slick";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
 import { all_routes } from "../../router/all_routes";
+import {
+  resendVerification,
+  verifyEmail,
+} from "../../../core/redux/authSlice";
 // type OTPProps = GetProps<typeof Input.OTP>;
 
 const Otp = () => {
@@ -18,12 +24,48 @@ const Otp = () => {
 
   const route = all_routes;
   const navigate = useNavigate();
-  const handleSubmit = (event: React.FormEvent) => {
-      event.preventDefault(); 
-      const Path = route.instructorDashboard; 
-      navigate(Path);
-    };
-  
+  const dispatch = useDispatch();
+  const search = new URLSearchParams(useLocation().search);
+  const email = search.get("email") || "";
+
+  const [otp, setOtp] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email) {
+      toast.error("Missing email. Please sign up again.");
+      return;
+    }
+    if (otp.length < 6) {
+      toast.error("Please enter the 6-digit code.");
+      return;
+    }
+    setSubmitting(true);
+    const res: any = await dispatch(verifyEmail({ email, otp }) as any);
+    setSubmitting(false);
+    if (res.meta.requestStatus === "fulfilled") {
+      toast.success("Email verified! You can now log in.");
+      navigate(route.login);
+    } else {
+      toast.error(res.payload || "Verification failed.");
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) {
+      toast.error("Missing email. Please sign up again.");
+      return;
+    }
+    const res: any = await dispatch(resendVerification({ email }) as any);
+    if (res.meta.requestStatus === "fulfilled") {
+      toast.success("A new code has been sent to your email.");
+      setSeconds(60);
+    } else {
+      toast.error(res.payload || "Could not resend code.");
+    }
+  };
+
   const [seconds, setSeconds] = useState(60);
 
   useEffect(() => {
@@ -53,68 +95,19 @@ const Otp = () => {
                   <div className="login-carousel-section mb-3">
                     <div className="login-banner">
                       <ImageWithBasePath
-                        src="assets/img/auth/auth-1.svg"
-                        className="img-fluid"
+                        src="assets/img/newLogo.PNG"
+                        className="logo"
                         alt="Logo"
+                        style={{ height: "180px", width: "auto" }}
                       />
                     </div>
                     <div className="mentor-course text-center">
                       <h3 className="mb-2">
-                        Welcome to <br />
-                        Bluverse<span className="text-secondary">LMS</span>{" "}
-                        Courses.
+                        Welcome To <br />
+                        Bluverse{" "}
+                        <span className="text-secondary">Digital Hub</span>
                       </h3>
-                      <p>
-                        Platform designed to help organizations, educators, and
-                        learners manage, deliver, and track learning and
-                        training activities.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className="login-carousel-section mb-3">
-                    <div className="login-banner">
-                      <ImageWithBasePath
-                        src="assets/img/auth/auth-1.svg"
-                        className="img-fluid"
-                        alt="Logo"
-                      />
-                    </div>
-                    <div className="mentor-course text-center">
-                      <h3 className="mb-2">
-                        Welcome to <br />
-                        Bluverse<span className="text-secondary">LMS</span>{" "}
-                        Courses.
-                      </h3>
-                      <p>
-                        Platform designed to help organizations, educators, and
-                        learners manage, deliver, and track learning and
-                        training activities.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className="login-carousel-section mb-3">
-                    <div className="login-banner">
-                      <ImageWithBasePath
-                        src="assets/img/auth/auth-1.svg"
-                        className="img-fluid"
-                        alt="Logo"
-                      />
-                    </div>
-                    <div className="mentor-course text-center">
-                      <h3 className="mb-2">
-                        Welcome to <br />
-                        Bluverse<span className="text-secondary">LMS</span>{" "}
-                        Courses.
-                      </h3>
-                      <p>
-                        Platform designed to help organizations, educators, and
-                        learners manage, deliver, and track learning and
-                        training activities.
-                      </p>
+                      <p>Learn. Earn. Dominate.</p>
                     </div>
                   </div>
                 </div>
@@ -128,9 +121,10 @@ const Otp = () => {
                   <div className="w-100">
                     <div className="d-flex align-items-center justify-content-between login-header">
                       <ImageWithBasePath
-                        src="assets/img/logo.svg"
+                        src="assets/img/newLogo.PNG"
                         className="img-fluid"
                         alt="Logo"
+                        style={{ height: "60px", width: "auto" }}
                       />
                       <Link to={route.homeone} className="link-1">
                         Back to Home
@@ -139,8 +133,8 @@ const Otp = () => {
                     <div className="topic">
                       <h1 className="fs-32 fw-bold mb-3">Email OTP</h1>
                       <p className="fs-14 fw-normal mb-0">
-                        OTP sent to your Email Address
-                        ending&nbsp;******doe@example.com
+                        A 6-digit verification code was sent to
+                        {email ? ` ${email}` : " your email address"}
                       </p>
                     </div>
                     <form onSubmit={handleSubmit} className="mb-3 pb-3">
@@ -166,8 +160,9 @@ const Otp = () => {
                           maxLength={1}
                         /> */}
                         <Input.OTP
-                          length={4}
-                          formatter={(str) => str.toUpperCase()}
+                          length={6}
+                          value={otp}
+                          onChange={(val) => setOtp(val)}
                         />
                       </div>
                       <div className="timer-cover d-flex align-items-center justify-content-center">
@@ -181,18 +176,22 @@ const Otp = () => {
                         <button
                           className="btn btn-secondary btn-lg"
                           type="submit"
+                          disabled={submitting}
                         >
-                          Verify &amp; Proceed
+                          {submitting ? "Verifying..." : "Verify & Proceed"}
                           <i className="isax isax-arrow-right-3 ms-1" />
                         </button>
                       </div>
                     </form>
                     <div className="fs-14 fw-normal d-flex align-items-center justify-content-center">
                       Didn’t get the OTP?
-                      <Link to="#" className="link-2 ms-1">
-                        {" "}
+                      <button
+                        type="button"
+                        className="btn btn-link link-2 ms-1 p-0"
+                        onClick={handleResend}
+                      >
                         Resend OTP
-                      </Link>
+                      </button>
                     </div>
                     {/* /Login */}
                   </div>

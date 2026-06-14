@@ -11,8 +11,8 @@ const Footer = () => {
               <div className="text-center text-lg-start">
                 <p>
                   Copyright 2025 ©{" "}
-                  <span className="text-dark">BluverseLMS</span>. All right
-                  reserved.
+                  <span className="text-dark">Bluverse Digital Hub</span>. All
+                  rights reserved.
                 </p>
               </div>
             </div>
@@ -30,21 +30,34 @@ const Footer = () => {
             </div>
             <div className="col-lg-3">
               <div className="social-icon">
-                <Link to="#">
+                <a
+                  href="https://www.facebook.com/share/1GMjUSkUdp/?mibextid=wwXIfr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <i className="fa-brands fa-facebook-f" />
-                </Link>
-                <Link to="#">
+                </a>
+                <a
+                  href="https://www.instagram.com/bluversedigitalhub/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <i className="fa-brands fa-instagram" />
-                </Link>
-                <Link to="#">
-                  <i className="fa-brands fa-x-twitter" />
-                </Link>
-                <Link to="#">
+                </a>
+                <a
+                  href="https://www.tiktok.com/@bluversedigitalhub"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i className="fa-brands fa-tiktok" />
+                </a>
+                <a
+                  href="https://www.youtube.com/@BluverseDigitalHub"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <i className="fa-brands fa-youtube" />
-                </Link>
-                <Link to="#">
-                  <i className="fa-brands fa-linkedin" />
-                </Link>
+                </a>
               </div>
             </div>
           </div>

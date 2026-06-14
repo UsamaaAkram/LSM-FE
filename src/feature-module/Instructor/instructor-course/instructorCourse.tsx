@@ -265,9 +265,20 @@ const InstructorCourse = () => {
                 </span>
                 <div>
                   <h4 className="mb-2">Delete Course</h4>
-                  <p className="mb-3">
-                    Are you sure you want to delete course?
+                  <p className="mb-2">
+                    Are you sure you want to delete this course?
                   </p>
+                  <div className="alert alert-warning text-start fs-13 mb-3">
+                    This will permanently remove everything linked to this
+                    course:
+                    <ul className="mb-0 mt-1 ps-3">
+                      <li>All assignments &amp; quizzes</li>
+                      <li>Every enrolled student&rsquo;s progress for it</li>
+                      <li>Certificates issued for this course</li>
+                      <li>The course from students&rsquo; enrolled &amp; wishlists</li>
+                    </ul>
+                    This action cannot be undone.
+                  </div>
                   <div className="d-flex align-items-center justify-content-center">
                     <Link
                       to="#"

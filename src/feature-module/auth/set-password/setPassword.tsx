@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
 import Slider from "react-slick";
+import { Input } from "antd";
+import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
+import { resetPassword } from "../../../core/redux/authSlice";
 
 const hasNumber = (value: string): boolean => {
   return /[0-9]/.test(value);
@@ -41,11 +45,42 @@ const SetPassword = () => {
   const [validationError, setValidationError] = useState<number>(0);
   const [strength, setStrength] = useState<string>("");
   const [eyeConfirmPassword, setEyeConfirmPassword] = useState<boolean>(true);
+  const [otp, setOtp] = useState<string>("");
+  const [submitting, setSubmitting] = useState<boolean>(false);
   const navigate = useNavigate();
-  const handleSubmit = (event: React.FormEvent) => {
+  const dispatch = useDispatch();
+  const email =
+    new URLSearchParams(useLocation().search).get("email") || "";
+
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const Path = route.instructorDashboard;
-    navigate(Path);
+    if (!email) {
+      toast.error("Missing email. Please start from Forgot Password.");
+      return;
+    }
+    if (otp.length < 6) {
+      toast.error("Please enter the 6-digit reset code.");
+      return;
+    }
+    if (validationError < 5) {
+      toast.error("Please provide a valid/secure password.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+    setSubmitting(true);
+    const res: any = await dispatch(
+      resetPassword({ email, otp, newPassword: password }) as any
+    );
+    setSubmitting(false);
+    if (res.meta.requestStatus === "fulfilled") {
+      toast.success("Password reset! You can now log in.");
+      navigate(route.login);
+    } else {
+      toast.error(res.payload || "Could not reset password.");
+    }
   };
   const onEyeClick = () => {
     setEye((prev) => !prev);
@@ -177,23 +212,19 @@ const SetPassword = () => {
                   <div className="login-carousel-section mb-3">
                     <div className="login-banner">
                       <ImageWithBasePath
-                        src="assets/img/blu_light.PNG"
+                        src="assets/img/newLogo.PNG"
                         className="logo"
                         alt="Logo"
-                        style={{ height: "270px", width: "auto" }}
+                        style={{ height: "180px", width: "auto" }}
                       />
                     </div>
                     <div className="mentor-course text-center">
                       <h3 className="mb-2">
-                        Welcome to <br />
-                        Bluverse<span className="text-secondary"> LMS</span>{" "}
-                        Courses.
+                        Welcome To <br />
+                        Bluverse{" "}
+                        <span className="text-secondary">Digital Hub</span>
                       </h3>
-                      <p>
-                        Platform designed to help organizations, educators, and
-                        learners manage, deliver, and track learning and
-                        training activities.
-                      </p>
+                      <p>Learn. Earn. Dominate.</p>
                     </div>
                   </div>
                 </div>
@@ -264,11 +295,24 @@ const SetPassword = () => {
                     <div className="topic">
                       <h1 className="fs-32 fw-bold ">Set Password</h1>
                       <p className="fw-normal fs-14 mb-0">
-                        Your new password must be different from previous
-                        password
+                        Enter the 6-digit code sent to
+                        {email ? ` ${email}` : " your email"} and choose a new
+                        password.
                       </p>
                     </div>
                     <form onSubmit={handleSubmit} className="mb-3 pb-3">
+                      <div className="mb-3 position-relative">
+                        <label className="form-label">
+                          Reset Code <span className="text-danger"> *</span>
+                        </label>
+                        <div>
+                          <Input.OTP
+                            length={6}
+                            value={otp}
+                            onChange={(val) => setOtp(val)}
+                          />
+                        </div>
+                      </div>
                       <div className="mb-3 position-relative">
                         <label className="form-label">
                           New Password <span className="text-danger"> *</span>
@@ -341,8 +385,9 @@ const SetPassword = () => {
                         <button
                           className="btn btn-secondary btn-lg"
                           type="submit"
+                          disabled={submitting}
                         >
-                          Reset Password{" "}
+                          {submitting ? "Resetting..." : "Reset Password"}{" "}
                           <i className="isax isax-arrow-right-3 ms-1" />
                         </button>
                       </div>

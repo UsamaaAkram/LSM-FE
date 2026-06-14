@@ -29,7 +29,7 @@ const Register: React.FC = () => {
 
   const [userName, setUserName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
-  const [role, setRole] = useState<"student" | "instructor">("student"); // default = student
+  const role = "student"; // instructor signup removed — public signup is student only
   const dispatch = useDispatch();
   const route = all_routes;
   const navigate = useNavigate();
@@ -170,8 +170,11 @@ const Register: React.FC = () => {
       registerUser({ email, password, userName, role }) as any
     );
     if (res.meta.requestStatus === "fulfilled") {
-      toast.success("Registration successful! Please log in.");
-      navigate(route.login); // Redirect after successful registration
+      toast.success(
+        "Registration successful! Check your email for the verification code."
+      );
+      // Go to OTP page to verify the email before logging in
+      navigate(`${route.otp}?email=${encodeURIComponent(email)}`);
     } else if (res.meta.requestStatus === "rejected") {
       toast.error(
         res.payload?.message || "Registration failed. Please try again."
@@ -203,23 +206,20 @@ const Register: React.FC = () => {
                 <div className="login-carousel-section mb-3">
                   <div className="login-banner">
                     <ImageWithBasePath
-                      src="assets/img/blu_light.PNG"
+                      src="assets/img/newLogo.PNG"
                       className="logo"
                       alt="Logo"
-                      style={{ height: "270px", width: "auto" }}
+                      style={{ height: "180px", width: "auto" }}
                     />
                   </div>
                   <div className="text-center px-2">
                     <h3 className="mb-2">
-                      Welcome to <br />
-                      Bluverse <span className="text-secondary">LMS</span>{" "}
-                      Courses.
+                      Welcome To <br />
+                      Bluverse <span className="text-secondary">
+                        Digital Hub
+                      </span>
                     </h3>
-                    <p>
-                      Platform designed to help organizations, educators, and
-                      learners manage, deliver, and track learning and training
-                      activities.
-                    </p>
+                    <p>Learn. Earn. Dominate.</p>
                   </div>
                 </div>
               </div>
@@ -270,36 +270,6 @@ const Register: React.FC = () => {
                         <span>
                           <i className="isax isax-sms input-icon text-gray-7 fs-14" />
                         </span>
-                      </div>
-                    </div>
-                    {/* Role radio buttons */}
-                    <div className="mb-3">
-                      <label className="form-label mb-2 fw-semibold">
-                        Sign up as
-                      </label>
-                      <div className="d-flex gap-3">
-                        <label className="form-check-label d-flex align-items-center gap-2">
-                          <input
-                            type="radio"
-                            className="form-check-input"
-                            name="role"
-                            value="student"
-                            checked={role === "student"}
-                            onChange={() => setRole("student")}
-                          />
-                          Student
-                        </label>
-                        <label className="form-check-label d-flex align-items-center gap-2">
-                          <input
-                            type="radio"
-                            className="form-check-input"
-                            name="role"
-                            value="instructor"
-                            checked={role === "instructor"}
-                            onChange={() => setRole("instructor")}
-                          />
-                          Instructor
-                        </label>
                       </div>
                     </div>
                     <div className="mb-3 position-relative">

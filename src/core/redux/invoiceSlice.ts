@@ -8,6 +8,12 @@ const Base_URL = `${API_URL}/api/invoices`;
 export interface InvoiceItem {
   itemId: string;
   qty: number;
+  // Manually charged custom items
+  isManual?: boolean;
+  description?: string;
+  unitPrice?: number;
+  // Present on persisted invoices returned by the API
+  total?: number;
 }
 
 export interface CatalogItem {
@@ -24,13 +30,17 @@ export interface Invoice {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  customerCity: string;
+  customerCity?: string;
+  classType?: string;
+  batchNo?: string;
   items: InvoiceItem[];
   paymentMethod: string;
   paymentStatus: string;
   dueDate: string;
   notes?: string;
   discount?: string;
+  pendingAmount?: number;
+  pendingAmountDate?: string;
   createdBy: string;
   totalAmount?: number;
   pdfUrl?: string;

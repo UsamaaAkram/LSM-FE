@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { all_routes } from "../../router/all_routes";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import Table from "../../../core/common/dataTable/index";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
@@ -150,6 +152,68 @@ const StudentDashboard = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Join Also */}
+              <div className="card mb-4">
+                <div className="card-header fw-bold fs-16">Join Also</div>
+                <div className="card-body">
+                  <div className="row g-3">
+                    <div className="col-md-4">
+                      <div className="d-flex align-items-center">
+                        <span className="icon-box bg-success-transparent me-2 me-xxl-3 flex-shrink-0">
+                          <i className="fa-brands fa-whatsapp fs-24 text-success" />
+                        </span>
+                        <div>
+                          <span className="d-block">WhatsApp Channel</span>
+                          <a
+                            href="https://whatsapp.com/channel/0029VbCmKZ28PgsKAB7SNn0Z"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="link-primary fw-semibold"
+                          >
+                            Join Channel
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="d-flex align-items-center">
+                        <span className="icon-box bg-primary-transparent me-2 me-xxl-3 flex-shrink-0">
+                          <i className="fa-brands fa-facebook fs-24 text-primary" />
+                        </span>
+                        <div>
+                          <span className="d-block">Facebook Group</span>
+                          <a
+                            href="https://www.facebook.com/share/g/1DLh8r3K37/?mibextid=wwXIfr"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="link-primary fw-semibold"
+                          >
+                            Join Group
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="d-flex align-items-center">
+                        <span className="icon-box bg-info-transparent me-2 me-xxl-3 flex-shrink-0">
+                          <i className="isax isax-messages-2 fs-24 text-info" />
+                        </span>
+                        <div>
+                          <span className="d-block">Community</span>
+                          <Link
+                            to={all_routes.studentMessage}
+                            className="link-primary fw-semibold"
+                          >
+                            In-Chat Support
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* /Join Also */}
 
               <div className="page-title d-flex align-items-center justify-content-between">
                 <h5 className="fw-bold">Course Progress</h5>

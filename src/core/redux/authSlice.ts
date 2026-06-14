@@ -77,8 +77,106 @@ export const loginUser = createAsyncThunk(
       });
       return response.data; // Expect {user, token}
     } catch (error: any) {
+      // Return the full error payload so callers can detect needsVerification
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message || "Login failed"
+        error.response?.data || { message: "Login failed" }
+      );
+    }
+  }
+);
+
+// Logout — clears the server-side session token, then local state
+export const logoutUser = createAsyncThunk(
+  "auth/logoutUser",
+  async (_, thunkAPI: any) => {
+    try {
+      const token = thunkAPI.getState()?.auth?.token;
+      await axios.post(
+        `${Base_URL}/auth/logout`,
+        {},
+        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+      );
+    } catch {
+      // Ignore network/server errors — we still clear the session locally.
+    }
+    return true;
+  }
+);
+
+// Verify email with OTP
+export const verifyEmail = createAsyncThunk(
+  "auth/verifyEmail",
+  async ({ email, otp }: { email: string; otp: string }, thunkAPI) => {
+    try {
+      const response = await axios.post(`${Base_URL}/students/verify-email`, {
+        email,
+        otp,
+      });
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.error || "Verification failed"
+      );
+    }
+  }
+);
+
+// Resend verification OTP
+export const resendVerification = createAsyncThunk(
+  "auth/resendVerification",
+  async ({ email }: { email: string }, thunkAPI) => {
+    try {
+      const response = await axios.post(
+        `${Base_URL}/students/resend-verification`,
+        { email }
+      );
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.error || "Could not resend code"
+      );
+    }
+  }
+);
+
+// Forgot password — request a reset code
+export const forgotPassword = createAsyncThunk(
+  "auth/forgotPassword",
+  async ({ email }: { email: string }, thunkAPI) => {
+    try {
+      const response = await axios.post(
+        `${Base_URL}/students/forgot-password`,
+        { email }
+      );
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.error || "Could not send reset code"
+      );
+    }
+  }
+);
+
+// Reset password — verify code + set new password
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async (
+    {
+      email,
+      otp,
+      newPassword,
+    }: { email: string; otp: string; newPassword: string },
+    thunkAPI
+  ) => {
+    try {
+      const response = await axios.post(
+        `${Base_URL}/students/reset-password`,
+        { email, otp, newPassword }
+      );
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.error || "Could not reset password"
       );
     }
   }
@@ -129,7 +227,16 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error =
+          (action.payload as any)?.message ||
+          (action.payload as string) ||
+          "Login failed";
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.user = null;
+        state.token = null;
+        state.error = null;
+        state.loading = false;
       });
   },
 });
