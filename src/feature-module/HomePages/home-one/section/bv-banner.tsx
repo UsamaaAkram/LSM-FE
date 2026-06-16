@@ -18,9 +18,6 @@ const BvBanner = () => {
               <div className="home-five-slide-face flex-fill">
                 <div className="home-five-slide-text">
                   <span className="text-white d-inline-block bg-secondary small rounded-pill px-3 py-2 mb-3 mb-sm-4">
-                    <span className="badge bg-white text-secondary rounded-pill me-1">
-                      New
-                    </span>
                     Generating 1 Billion+ Views Across Social Platforms Every
                     Month
                   </span>

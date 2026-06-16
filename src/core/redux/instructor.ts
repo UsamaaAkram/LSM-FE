@@ -57,6 +57,24 @@ const getAllInstructors = createAsyncThunk(
   }
 );
 
+// Admin creates a new instructor account
+const createInstructor = createAsyncThunk(
+  "instructor/createInstructor",
+  async (data: any, thunkAPI) => {
+    try {
+      const response = await axios.post(`${Base_URL}/signup`, {
+        ...data,
+        role: "instructor",
+      });
+      return response.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.error || "Create instructor failed"
+      );
+    }
+  }
+);
+
 const updateInstructorProfile = createAsyncThunk(
   "instructor/updateProfile",
   async (
@@ -229,6 +247,7 @@ export const { clearInstructorState, setInstructor } = instructorSlice.actions;
 export default instructorSlice.reducer;
 export {
   updateInstructorProfile,
+  createInstructor,
   getAllInstructors,
   getInstructorById,
   fetchStudentQuizResults,

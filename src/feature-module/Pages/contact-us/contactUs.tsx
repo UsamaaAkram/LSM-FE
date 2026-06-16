@@ -370,7 +370,8 @@ const ContactUs = () => {
           {/* ═══════ Map ═══════ */}
           <div className="contact-map rounded-4 overflow-hidden">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3456.789!2d71.7185!3d29.7867!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sDunyapur%2C%20Pakistan!5e0!3m2!1sen!2s!4v1738829223631!5m2!1sen!2s"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3462.128952633697!2d71.737442!3d29.8028187!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e517de69abe8ccb%3A0x441c39b3be4c08bb!2sBLUVERSE%20DIGITAL%20HUB!5e0!3m2!1sen!2s!4v1781640377689!5m2!1sen!2s"
+              allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               title="Bluverse Digital Hub Location"

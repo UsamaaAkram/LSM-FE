@@ -36,7 +36,8 @@ export interface Invoice {
   items: InvoiceItem[];
   paymentMethod: string;
   paymentStatus: string;
-  dueDate: string;
+  enrollmentDate?: string;
+  dueDate?: string;
   notes?: string;
   discount?: string;
   pendingAmount?: number;
@@ -133,6 +134,21 @@ export const updateInvoice = createAsyncThunk(
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
         err.response?.data?.error || "Update invoice failed"
+      );
+    }
+  }
+);
+
+// POST regenerate the invoice PDF (for invoices missing a pdfUrl)
+export const regenerateInvoicePdf = createAsyncThunk(
+  "invoice/regeneratePdf",
+  async (id: string, thunkAPI) => {
+    try {
+      const res = await axios.post(`${Base_URL}/${id}/regenerate-pdf`);
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(
+        err.response?.data?.error || "Could not generate PDF"
       );
     }
   }

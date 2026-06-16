@@ -21,6 +21,8 @@ import {
   fetchCatalog,
   fetchInvoiceById,
   fetchInvoices,
+  regenerateInvoicePdf,
+  updateInvoice,
 } from "../../../../core/redux/invoiceSlice";
 import type { AppDispatch, RootState } from "../../../../core/redux/store";
 
@@ -35,7 +37,7 @@ const paymentMethodOptions: OptionType[] = [
 const paymentStatusOptions: OptionType[] = [
   { value: "Pending", label: "Pending" },
   { value: "Completed", label: "Completed" },
-  { value: "Cancelled", label: "Cancelled" },
+  { value: "Refunded", label: "Refunded" },
 ];
 
 // ─── Empty form state ───
@@ -47,7 +49,7 @@ const emptyForm = {
   batchNo: "",
   paymentMethod: "",
   paymentStatus: "Pending",
-  dueDate: "",
+  enrollmentDate: "",
   notes: "",
   discount: "",
   pendingAmount: "",
@@ -192,6 +194,11 @@ const InstructorPlanSettings = () => {
       const cat = findCatalogItem(sel.itemId);
       if (cat) total += getItemPrice(cat) * sel.qty;
     });
+    // Optional discount (percentage)
+    if (form.discount) {
+      const d = parseFloat(form.discount.replace("%", "").trim());
+      if (!isNaN(d) && d > 0) total = total - (total * d) / 100;
+    }
     return Math.max(Math.round(total * 100) / 100, 0);
   };
 
@@ -209,8 +216,8 @@ const InstructorPlanSettings = () => {
       toast.error("Please select a payment method");
       return;
     }
-    if (!form.dueDate) {
-      toast.error("Please select a due date");
+    if (!form.enrollmentDate) {
+      toast.error("Please select an enrollment date");
       return;
     }
 
@@ -224,8 +231,9 @@ const InstructorPlanSettings = () => {
         items: selectedItems,
         paymentMethod: form.paymentMethod,
         paymentStatus: form.paymentStatus,
-        dueDate: form.dueDate,
+        enrollmentDate: form.enrollmentDate,
         notes: form.notes,
+        discount: form.discount || undefined,
         pendingAmount: form.pendingAmount
           ? Number(form.pendingAmount)
           : undefined,
@@ -233,6 +241,39 @@ const InstructorPlanSettings = () => {
         createdBy: user?._id || "",
       }),
     );
+  };
+
+  // ─── Download PDF (regenerate if missing) ───
+  const handleDownloadInvoice = async (inv: any) => {
+    if (inv.pdfUrl) {
+      window.open(inv.pdfUrl, "_blank");
+      return;
+    }
+    toast.info("Preparing PDF…");
+    const res: any = await dispatch(regenerateInvoicePdf(inv._id) as any);
+    if (res.meta.requestStatus === "fulfilled" && res.payload?.pdfUrl) {
+      window.open(res.payload.pdfUrl, "_blank");
+      dispatch(fetchInvoices(statusFilter ? { paymentStatus: statusFilter } : {}));
+    } else {
+      toast.error(res.payload || "Could not generate the PDF");
+    }
+  };
+
+  // ─── Update an invoice's payment status from the portal ───
+  const handleUpdateStatus = async (inv: any, newStatus: string) => {
+    if (!inv?._id || newStatus === inv.paymentStatus) return;
+    const res: any = await dispatch(
+      updateInvoice({ id: inv._id, data: { paymentStatus: newStatus } }) as any
+    );
+    if (res.meta.requestStatus === "fulfilled") {
+      toast.success(`Status updated to ${newStatus}`);
+      setViewInvoice((prev) =>
+        prev ? { ...prev, paymentStatus: newStatus, pdfUrl: res.payload?.pdfUrl ?? prev.pdfUrl } : prev
+      );
+      dispatch(fetchInvoices(statusFilter ? { paymentStatus: statusFilter } : {}));
+    } else {
+      toast.error(res.payload || "Could not update status");
+    }
   };
 
   // ─── Delete handler ───
@@ -301,8 +342,9 @@ const InstructorPlanSettings = () => {
           border-bottom: 1px solid #ddd;
           margin-bottom: 16px;
         }
-        .header img { height: 60px; display: block; margin-bottom: 6px; }
+        .header img { height: 96px; display: block; margin-bottom: 6px; }
         .header-right { text-align: right; }
+        .invoice-title { font-size: 24px; font-weight: 800; letter-spacing: 2px; color: #222; margin-bottom: 2px; }
         .invoice-id { color: #00bffd; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
 
         .parties {
@@ -367,8 +409,8 @@ const InstructorPlanSettings = () => {
         .terms p { font-size: 11px; color: #555; line-height: 1.6; }
         .notes h6 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
         .notes p { font-size: 11px; color: #555; }
-        .signature { text-align: right; min-width: 140px; }
-        .signature img { height: 70px; margin-bottom: 4px; }
+        .signature { text-align: center; min-width: 160px; }
+        .signature img { height: 110px; max-width: 170px; object-fit: contain; margin-bottom: 4px; }
         .signature h6 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
         .signature p { font-size: 11px; color: #888; }
 
@@ -387,9 +429,10 @@ const InstructorPlanSettings = () => {
           <p style="font-size:11px; color:#888; margin-top:4px;">Near HBL Bank Railway Road, Dunyapur, Pakistan</p>
         </div>
         <div class="header-right">
+          <div class="invoice-title">INVOICE</div>
           <div class="invoice-id">#${viewInvoice.invoiceId || viewInvoice._id?.slice(-6).toUpperCase() || ""}</div>
-          <p>Created : ${viewInvoice.createdAt ? moment(viewInvoice.createdAt).format("MMM DD, YYYY") : "—"}</p>
-          <p>Due : ${viewInvoice.dueDate ? moment(viewInvoice.dueDate).format("MMM DD, YYYY") : "—"}</p>
+          <p>Invoice Date : ${viewInvoice.createdAt ? moment(viewInvoice.createdAt).format("MMM DD, YYYY") : "—"}</p>
+          ${viewInvoice.enrollmentDate ? `<p>Enrollment Date : ${moment(viewInvoice.enrollmentDate).format("MMM DD, YYYY")}</p>` : ""}
         </div>
       </div>
 
@@ -450,6 +493,11 @@ const InstructorPlanSettings = () => {
             <span>Sub Total</span>
             <span>Rs. ${subtotal.toLocaleString()}</span>
           </div>
+          ${
+            viewInvoice.discountAmount && viewInvoice.discountAmount > 0
+              ? `<div class="row"><span>Discount ${viewInvoice.discount ? viewInvoice.discount + "%" : ""}</span><span>- Rs. ${viewInvoice.discountAmount.toLocaleString()}</span></div>`
+              : ""
+          }
           <div class="row border-top">
             <span>Total Amount</span>
             <span>Rs. ${typeof viewInvoice.totalAmount === "number" ? viewInvoice.totalAmount.toLocaleString() : "—"}</span>
@@ -571,11 +619,11 @@ const InstructorPlanSettings = () => {
             Pending
           </span>
         );
-      case "Cancelled":
+      case "Refunded":
         return (
           <span className="badge badge-sm fs-10 bg-danger rounded-pill d-inline-flex align-items-center">
             <i className="fa-solid fa-circle fs-5 me-1" />
-            Cancelled
+            Refunded
           </span>
         );
       default:
@@ -649,9 +697,9 @@ const InstructorPlanSettings = () => {
                         <Link
                           to="#"
                           className="dropdown-item rounded-1"
-                          onClick={() => setStatusFilter("Cancelled")}
+                          onClick={() => setStatusFilter("Refunded")}
                         >
-                          Cancelled
+                          Refunded
                         </Link>
                       </li>
                     </ul>
@@ -690,7 +738,7 @@ const InstructorPlanSettings = () => {
                         <th>#</th>
                         <th>Customer</th>
                         <th>Payment Method</th>
-                        <th>Due Date</th>
+                        <th>Enrollment Date</th>
                         <th>Amount</th>
                         <th>Status</th>
                         <th />
@@ -716,8 +764,8 @@ const InstructorPlanSettings = () => {
                           </td>
                           <td>{inv.paymentMethod}</td>
                           <td>
-                            {inv.dueDate
-                              ? moment(inv.dueDate).format("DD MMM YYYY")
+                            {inv.enrollmentDate
+                              ? moment(inv.enrollmentDate).format("DD MMM YYYY")
                               : "—"}
                           </td>
                           <td className="fw-medium">
@@ -740,18 +788,15 @@ const InstructorPlanSettings = () => {
                               >
                                 <i className="isax isax-eye" />
                               </Link>
-                              {/* Download PDF */}
-                              {inv.pdfUrl && (
-                                <a
-                                  href={inv.pdfUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="d-inline-flex fs-14 action-icon"
-                                  title="Download PDF"
-                                >
-                                  <i className="isax isax-import" />
-                                </a>
-                              )}
+                              {/* Download PDF — regenerates if missing */}
+                              <button
+                                type="button"
+                                className="d-inline-flex fs-14 action-icon btn btn-link p-0"
+                                title="Download PDF"
+                                onClick={() => handleDownloadInvoice(inv)}
+                              >
+                                <i className="isax isax-import" />
+                              </button>
                               {/* Delete */}
                               <Link
                                 to="#"
@@ -916,7 +961,7 @@ const InstructorPlanSettings = () => {
                 <div className="col-md-6">
                   <div className="mb-3">
                     <label className="form-label">
-                      Due Date <span className="text-danger">*</span>
+                      Enrollment Date <span className="text-danger">*</span>
                     </label>
                     <div className="input-icon position-relative calender-input">
                       <span className="input-icon-addon">
@@ -925,9 +970,12 @@ const InstructorPlanSettings = () => {
                       <DatePicker
                         className="form-control datetimepicker"
                         getPopupContainer={getModalContainer}
-                        placeholder="Select due date"
+                        placeholder="Select enrollment date"
                         onChange={(_date, dateString) =>
-                          setForm({ ...form, dueDate: dateString as string })
+                          setForm({
+                            ...form,
+                            enrollmentDate: dateString as string,
+                          })
                         }
                       />
                     </div>
@@ -971,6 +1019,21 @@ const InstructorPlanSettings = () => {
                         }
                       />
                     </div>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Discount % <small className="text-muted">(optional)</small>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="discount"
+                      value={form.discount}
+                      onChange={handleInputChange}
+                      placeholder="e.g. 10"
+                    />
                   </div>
                 </div>
                 {/* ─── Charges (manual line items, editable price) ─── */}
@@ -1143,7 +1206,7 @@ const InstructorPlanSettings = () => {
                         <div className="mb-2 invoice-logo-white">
                           <ImageWithBasePath
                             src="assets/img/newLogo.PNG"
-                            width={100}
+                            width={150}
                           />
                         </div>
                         <p className="mb-2">
@@ -1152,11 +1215,14 @@ const InstructorPlanSettings = () => {
                       </div>
                       <div className="col-md-6">
                         <div className="text-end mb-3">
+                          <h4 className="fw-bold mb-1" style={{ letterSpacing: 2 }}>
+                            INVOICE
+                          </h4>
                           <h6 className="text-default mb-1 text-secondary fs-16">
                             #{viewInvoice.invoiceId}
                           </h6>
                           <p className="mb-1">
-                            Created Date :{" "}
+                            Invoice Date :{" "}
                             <span className="text-gray-9">
                               {viewInvoice.createdAt
                                 ? moment(viewInvoice.createdAt).format(
@@ -1165,16 +1231,16 @@ const InstructorPlanSettings = () => {
                                 : "—"}
                             </span>
                           </p>
-                          <p>
-                            Due Date :{" "}
-                            <span className="text-gray-9">
-                              {viewInvoice.dueDate
-                                ? moment(viewInvoice.dueDate).format(
-                                    "MMM DD, YYYY",
-                                  )
-                                : "—"}
-                            </span>
-                          </p>
+                          {viewInvoice.enrollmentDate && (
+                            <p>
+                              Enrollment Date :{" "}
+                              <span className="text-gray-9">
+                                {moment(viewInvoice.enrollmentDate).format(
+                                  "MMM DD, YYYY",
+                                )}
+                              </span>
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1224,7 +1290,7 @@ const InstructorPlanSettings = () => {
                         <div className="mb-3 text-end">
                           <span className="mb-1 d-block">Payment Status</span>
                           <span
-                            className={`badge badge-md d-inline-flex align-items-center fs-10 fw-normal mb-4 ${
+                            className={`badge badge-md d-inline-flex align-items-center fs-10 fw-normal mb-2 ${
                               viewInvoice.paymentStatus === "Completed"
                                 ? "bg-success"
                                 : viewInvoice.paymentStatus === "Pending"
@@ -1235,6 +1301,18 @@ const InstructorPlanSettings = () => {
                             <i className="fa-solid fa-circle fs-5 me-1" />
                             {viewInvoice.paymentStatus}
                           </span>
+                          {/* Editable status — update from the portal */}
+                          <select
+                            className="form-select form-select-sm mb-2"
+                            value={viewInvoice.paymentStatus}
+                            onChange={(e) =>
+                              handleUpdateStatus(viewInvoice, e.target.value)
+                            }
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Refunded">Refunded</option>
+                          </select>
                           <div>
                             <p className="fs-14 mb-0 text-muted">
                               {viewInvoice.paymentMethod}
@@ -1306,6 +1384,21 @@ const InstructorPlanSettings = () => {
                               .toLocaleString()}
                           </p>
                         </div>
+                        {/* Discount */}
+                        {viewInvoice.discountAmount != null &&
+                          viewInvoice.discountAmount > 0 && (
+                            <div className="d-flex justify-content-between align-items-center border-bottom my-2 pb-2 pe-3">
+                              <p className="text-gray mb-0">
+                                Discount{" "}
+                                {viewInvoice.discount
+                                  ? `${viewInvoice.discount}%`
+                                  : ""}
+                              </p>
+                              <p className="text-gray-9 fw-medium mb-0">
+                                - Rs. {viewInvoice.discountAmount.toLocaleString()}
+                              </p>
+                            </div>
+                          )}
                         {/* Total Amount */}
                         <div className="d-flex justify-content-between align-items-center mb-2 pe-3 mt-2">
                           <h6 className="fs-16">Total Amount</h6>
@@ -1376,10 +1469,10 @@ const InstructorPlanSettings = () => {
                       </div>
                     </div>
                     <div className="col-md-3">
-                      <div className="text-end">
+                      <div className="text-center">
                         <ImageWithBasePath
                           src="assets/img/stamp.PNG"
-                          width={100}
+                          width={150}
                         />
                       </div>
                       <div className="text-end">

@@ -5,17 +5,29 @@ import { toast } from "react-toastify";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import Table from "../../../core/common/dataTable/index";
 import {
+  createInstructor,
   getAllInstructors,
   updateInstructorProfile,
 } from "../../../core/redux/instructor";
 import InstructorSidebar from "../common/instructorSidebar";
 import ProfileCard from "../common/profileCard";
 
+const emptyInstructor = {
+  firstName: "",
+  lastName: "",
+  userName: "",
+  email: "",
+  password: "",
+  phoneNumber: "",
+};
+
 const AllInstructorGrid = () => {
   const dispatch = useDispatch();
   const { instructors, loading, error } = useSelector(
     (state: any) => state.instructor
   );
+  const authUser = useSelector((state: any) => state.auth.user);
+  const isAdmin = authUser?.role === "admin";
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -23,9 +35,36 @@ const AllInstructorGrid = () => {
   const [editIsDisable, setEditIsDisable] = useState(true);
   const [editModules, setEditModules] = useState<any[]>([]);
 
+  // Create-instructor modal state
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState(emptyInstructor);
+  const [creating, setCreating] = useState(false);
+
   useEffect(() => {
     dispatch(getAllInstructors() as any);
   }, [dispatch]);
+
+  const handleCreateInstructor = async () => {
+    if (
+      !createForm.userName ||
+      !createForm.email ||
+      !createForm.password
+    ) {
+      toast.error("User name, email and password are required");
+      return;
+    }
+    setCreating(true);
+    const res: any = await dispatch(createInstructor(createForm) as any);
+    setCreating(false);
+    if (createInstructor.fulfilled.match(res)) {
+      toast.success("Instructor created");
+      setShowCreate(false);
+      setCreateForm(emptyInstructor);
+      dispatch(getAllInstructors() as any);
+    } else {
+      toast.error((res.payload as string) || "Could not create instructor");
+    }
+  };
 
   // Open modal to edit instructor
   const handleEdit = (instructor: any) => {
@@ -141,6 +180,18 @@ const AllInstructorGrid = () => {
             <div className="col-lg-9">
               <div className="page-title d-flex align-items-center justify-content-between">
                 <h5 className="fw-bold">Instructors List</h5>
+                {isAdmin && (
+                  <button
+                    className="btn btn-secondary d-flex align-items-center"
+                    onClick={() => {
+                      setCreateForm(emptyInstructor);
+                      setShowCreate(true);
+                    }}
+                  >
+                    <i className="isax isax-add-circle me-1" />
+                    Create Instructor
+                  </button>
+                )}
               </div>
               <div className="row justify-content-end">
                 <div className="col-md-4">
@@ -254,6 +305,132 @@ const AllInstructorGrid = () => {
                   type="button"
                 >
                   Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Instructor Modal (admin only) */}
+      {showCreate && (
+        <div
+          className="modal fade show d-block"
+          tabIndex={-1}
+          style={{
+            background: "rgba(0,0,0,0.2)",
+            position: "fixed",
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+          }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content p-3">
+              <div className="modal-header">
+                <h5 className="modal-title">Create Instructor</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowCreate(false)}
+                />
+              </div>
+              <div className="modal-body">
+                <div className="row">
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">First Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={createForm.firstName}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, firstName: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Last Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={createForm.lastName}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, lastName: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">
+                      User Name <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={createForm.userName}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, userName: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">
+                      Email <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      value={createForm.email}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, email: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">
+                      Password <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      value={createForm.password}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, password: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Phone Number</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={createForm.phoneNumber}
+                      onChange={(e) =>
+                        setCreateForm({
+                          ...createForm,
+                          phoneNumber: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowCreate(false)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-secondary ms-2"
+                  onClick={handleCreateInstructor}
+                  type="button"
+                  disabled={creating}
+                >
+                  {creating ? "Creating..." : "Create Instructor"}
                 </button>
               </div>
             </div>

@@ -1,8 +1,13 @@
+import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
+
 const points = [
-  "Posting content but no growth?",
-  "Don’t know how to monetize?",
-  "Confused about AI tools & strategies?",
-  "No clear roadmap to success?",
+  { text: "Posting content but no growth?", icon: "assets/img/growth.png" },
+  { text: "Don’t know how to monetize?", icon: "assets/img/wallet.png" },
+  {
+    text: "Confused about AI tools & strategies?",
+    icon: "assets/img/ai_tool.png",
+  },
+  { text: "No clear roadmap to success?", icon: "assets/img/roadmap.png" },
 ];
 
 const BvStruggling = () => {
@@ -22,12 +27,17 @@ const BvStruggling = () => {
                   data-aos="fade-up"
                   key={index}
                 >
-                  <div className="skils-icon-item h-100">
-                    <div className="skils-icon">
-                      <i className="isax isax-warning-2 text-secondary fs-24" />
+                  <div className="skils-icon-item h-100 text-center">
+                    <div className="skils-icon mb-2">
+                      <ImageWithBasePath
+                        src={point.icon}
+                        alt={point.text}
+                        className="img-fluid"
+                        style={{ height: 64, width: "auto" }}
+                      />
                     </div>
                     <div className="skils-content">
-                      <p className="mb-0">{point}</p>
+                      <p className="mb-0">{point.text}</p>
                     </div>
                   </div>
                 </div>
