@@ -22,8 +22,8 @@ const BvBanner = () => {
                     Month
                   </span>
                   <h1>
-                    Pakistan&rsquo;s Leading Content Creation{" "}
-                    <span>&amp;</span> Digital Skills Institute
+                    Pakistan&rsquo;s Leading Institute Of{" "}
+                    <span>Content Creation &amp;</span> Digital Skills
                   </h1>
                   <p>
                     We empower youth to master modern skills, build digital

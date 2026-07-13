@@ -74,6 +74,7 @@ export const instructorSidebarData = [
     },
     {
         title:'Support Tickets',
+        module:'tickets',
         icon:'isax isax-ticket5',
         route: all_routes.instructorTickets
     },

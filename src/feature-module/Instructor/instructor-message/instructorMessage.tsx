@@ -17,6 +17,7 @@ import {
   blockChat,
   clearMessages,
   createChat,
+  deleteChat,
   fetchChats,
   fetchChatsWithUnread,
   fetchMessages,
@@ -171,6 +172,37 @@ const InstructorMessage = () => {
     });
     dispatch(setActiveChat(null));
     dispatch(clearMessages());
+  };
+
+  const handleDeleteChat = () => {
+    if (!activeChat || !activeChat._id || !currentUser || !currentUser._id)
+      return;
+    if (
+      !window.confirm(
+        "Delete this chat? This will remove the conversation from your list."
+      )
+    )
+      return;
+    const roleModel =
+      currentUser.role === "student"
+        ? "Student"
+        : currentUser.role === "instructor"
+        ? "Instructor"
+        : "User";
+    dispatch(
+      deleteChat({
+        chatId: activeChat._id,
+        userId: currentUser._id,
+        role: roleModel,
+      })
+    )
+      .unwrap()
+      .then(() => {
+        toast.success("Chat deleted");
+        dispatch(setActiveChat(null));
+        dispatch(clearMessages());
+      })
+      .catch(() => toast.error("Could not delete chat"));
   };
 
   // Robustly get the other user's id for this chat (for both string and object cases)
@@ -726,6 +758,16 @@ const InstructorMessage = () => {
                                       Block
                                     </Link>
                                   )}
+                                </li>
+                                <li>
+                                  <Link
+                                    to="#"
+                                    className="dropdown-item text-danger"
+                                    onClick={handleDeleteChat}
+                                  >
+                                    <i className="isax isax-trash me-2" />
+                                    Delete Chat
+                                  </Link>
                                 </li>
                               </ul>
                             </div>

@@ -300,6 +300,38 @@ const CourseDetails = () => {
                     </div>
                   </div>
                 )}
+                {!auth && (
+                  <div className="card mb-4">
+                    <div className="card-body">
+                      {(currentCourse.price > 0 ||
+                        currentCourse.originalPrice > 0) && (
+                        <div className="mb-3 d-flex align-items-center gap-2">
+                          {currentCourse.originalPrice >
+                            currentCourse.price && (
+                            <span className="text-muted text-decoration-line-through">
+                              Rs{" "}
+                              {Number(
+                                currentCourse.originalPrice
+                              ).toLocaleString()}
+                            </span>
+                          )}
+                          <span className="fs-22 fw-bold text-secondary">
+                            Rs{" "}
+                            {Number(currentCourse.price || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                      <a
+                        href={WHATSAPP_ENROLL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary w-100 btn-enroll"
+                      >
+                        Enroll Now
+                      </a>
+                    </div>
+                  </div>
+                )}
                 <div className="card mb-4">
                   <div className="card-body">
                     <h5 className="subs-title mb-4">Includes</h5>

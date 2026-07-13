@@ -1,13 +1,22 @@
 import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
 
 const points = [
-  { text: "Posting content but no growth?", icon: "assets/img/growth.png" },
-  { text: "Don’t know how to monetize?", icon: "assets/img/wallet.png" },
+  {
+    text: "Posting content but no growth?",
+    icon: "assets/img/struggle-growth.png",
+  },
+  {
+    text: "Don’t know how to monetize?",
+    icon: "assets/img/struggle-monetise.png",
+  },
   {
     text: "Confused about AI tools & strategies?",
-    icon: "assets/img/ai_tool.png",
+    icon: "assets/img/struggle-ai.png",
   },
-  { text: "No clear roadmap to success?", icon: "assets/img/roadmap.png" },
+  {
+    text: "No clear roadmap to success?",
+    icon: "assets/img/struggle-roadmap.png",
+  },
 ];
 
 const BvStruggling = () => {

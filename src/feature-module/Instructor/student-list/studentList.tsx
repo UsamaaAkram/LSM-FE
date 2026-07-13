@@ -21,11 +21,14 @@ const StudentList: React.FC = () => {
   const dispatch = useDispatch();
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState({});
+  const [view, setView] = useState<"all" | "enrolled">("all");
   const { students, loading } = useSelector((state: any) => state.student);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const handleCreateStudent = async (values: any) => {
-    const res = await dispatch(signupStudent({...values, role:'student'}) as any);
+    const res = await dispatch(
+      signupStudent({ ...values, role: "student", sendCredentials: true }) as any
+    );
     if (res.meta.requestStatus === "fulfilled") {
       toast.success("Student created successfully!");
       setShowAddModal(false);
@@ -36,15 +39,12 @@ const StudentList: React.FC = () => {
     }
   };
 
+  // Call summary API whenever filters or the All/Enrolled view change
   useEffect(() => {
-    // fetch unfiltered list (or use summary endpoint without filters)
-    dispatch(getStudentSummary({}) as any);
-  }, [dispatch]);
-
-  // Call summary API whenever filters change
-  useEffect(() => {
-    dispatch(getStudentSummary(filters) as any);
-  }, [dispatch, filters]);
+    const params: any = { ...filters };
+    if (view === "enrolled") params.enrolled = "true";
+    dispatch(getStudentSummary(params) as any);
+  }, [dispatch, filters, view]);
 
   const columns = [
     {
@@ -142,6 +142,29 @@ const StudentList: React.FC = () => {
                   Add Student
                 </Button>
               </div>
+              {/* Registered / Enrolled tabs */}
+              <ul className="nav nav-pills mb-3 gap-2">
+                <li className="nav-item">
+                  <button
+                    type="button"
+                    className={`nav-link ${view === "all" ? "active" : ""}`}
+                    onClick={() => setView("all")}
+                  >
+                    Registered
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button
+                    type="button"
+                    className={`nav-link ${
+                      view === "enrolled" ? "active" : ""
+                    }`}
+                    onClick={() => setView("enrolled")}
+                  >
+                    Enrolled
+                  </button>
+                </li>
+              </ul>
               <div className="row justify-content-between align-items-center mb-3">
                 <div className="col-md-4">
                   <Button

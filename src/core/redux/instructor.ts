@@ -57,6 +57,21 @@ const getAllInstructors = createAsyncThunk(
   }
 );
 
+// Admin deletes an instructor
+const deleteInstructor = createAsyncThunk(
+  "instructor/deleteInstructor",
+  async (id: string, thunkAPI) => {
+    try {
+      await axios.delete(`${Base_URL}/${id}`);
+      return id;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.error || "Delete instructor failed"
+      );
+    }
+  }
+);
+
 // Admin creates a new instructor account
 const createInstructor = createAsyncThunk(
   "instructor/createInstructor",
@@ -248,6 +263,7 @@ export default instructorSlice.reducer;
 export {
   updateInstructorProfile,
   createInstructor,
+  deleteInstructor,
   getAllInstructors,
   getInstructorById,
   fetchStudentQuizResults,

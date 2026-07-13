@@ -293,6 +293,20 @@ const Header = () => {
                 
                 <li
                   className={`has-submenu ${
+                    location.pathname === all_routes.courseGrid ? "active" : ""
+                  }`}
+                >
+                  <Link to={all_routes.courseGrid}>Courses</Link>
+                </li>
+                <li
+                  className={`has-submenu ${
+                    location.pathname === all_routes.services ? "active" : ""
+                  }`}
+                >
+                  <Link to={all_routes.services}>Services</Link>
+                </li>
+                <li
+                  className={`has-submenu ${
                     location.pathname === all_routes.about_us ? "active" : ""
                   }`}
                 >

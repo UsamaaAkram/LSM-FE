@@ -38,6 +38,8 @@ export interface Invoice {
   paymentStatus: string;
   enrollmentDate?: string;
   dueDate?: string;
+  mode?: string; // "online" | "onsite"
+  isDeleted?: boolean;
   notes?: string;
   discount?: string;
   pendingAmount?: number;
@@ -154,7 +156,7 @@ export const regenerateInvoicePdf = createAsyncThunk(
   }
 );
 
-// DELETE invoice
+// DELETE invoice (soft delete on the backend)
 export const deleteInvoice = createAsyncThunk(
   "invoice/delete",
   async (id: string, thunkAPI) => {
@@ -164,6 +166,21 @@ export const deleteInvoice = createAsyncThunk(
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
         err.response?.data?.error || "Delete invoice failed"
+      );
+    }
+  }
+);
+
+// POST restore a soft-deleted invoice
+export const restoreInvoice = createAsyncThunk(
+  "invoice/restore",
+  async (id: string, thunkAPI) => {
+    try {
+      await axios.post(`${Base_URL}/${id}/restore`);
+      return id;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(
+        err.response?.data?.error || "Restore invoice failed"
       );
     }
   }
@@ -278,6 +295,23 @@ const invoiceSlice = createSlice({
         state.success = true;
       })
       .addCase(deleteInvoice.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.error = payload as string;
+        state.success = false;
+      })
+      // Restore
+      .addCase(restoreInvoice.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(restoreInvoice.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        // Remove from the currently-shown (Deleted) list once restored
+        state.invoices = state.invoices.filter((inv) => inv._id !== payload);
+        state.success = true;
+      })
+      .addCase(restoreInvoice.rejected, (state, { payload }) => {
         state.loading = false;
         state.error = payload as string;
         state.success = false;

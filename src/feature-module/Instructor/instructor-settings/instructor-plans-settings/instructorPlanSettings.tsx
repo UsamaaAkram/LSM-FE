@@ -22,6 +22,7 @@ import {
   fetchInvoiceById,
   fetchInvoices,
   regenerateInvoicePdf,
+  restoreInvoice,
   updateInvoice,
 } from "../../../../core/redux/invoiceSlice";
 import type { AppDispatch, RootState } from "../../../../core/redux/store";
@@ -50,11 +51,18 @@ const emptyForm = {
   paymentMethod: "",
   paymentStatus: "Pending",
   enrollmentDate: "",
+  mode: "online",
   notes: "",
   discount: "",
   pendingAmount: "",
   pendingAmountDate: "",
 };
+
+// ─── Invoice record type (Online vs On-Site) ───
+const modeOptions: OptionType[] = [
+  { value: "online", label: "Online" },
+  { value: "onsite", label: "On-Site" },
+];
 
 type SelectedItem = {
   itemId: string;
@@ -92,31 +100,72 @@ const InstructorPlanSettings = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [batchFilter, setBatchFilter] = useState<string>("");
+  const [selectedMode, setSelectedMode] = useState<OptionType | null>(
+    modeOptions[0],
+  );
+  // Record tab: All / Online / Onsite / Deleted (superadmin only)
+  const [activeTab, setActiveTab] = useState<
+    "all" | "online" | "onsite" | "deleted"
+  >("all");
+
+  const isSuperAdmin = user?.role === "admin";
+
+  // ─── Enrollment-receipt permission ───
+  // Admins have full access. Instructors must have the "receipts" module
+  // explicitly enabled by an admin — default-DENY when the entry is missing
+  // (no auto-access to receipt/invoice generation).
+  const canManageReceipts = (() => {
+    if (user?.role !== "instructor") return true;
+    const mods: any[] = (user as any)?.modules ?? [];
+    const mod = mods.find((m) => m?.name === "receipts");
+    return !!mod && !mod.isDisable;
+  })();
 
   // ─── Fetch invoices + catalog on mount ───
   useEffect(() => {
-    dispatch(fetchInvoices({}));
     dispatch(fetchCatalog());
     return () => {
       dispatch(clearInvoiceState());
     };
   }, [dispatch]);
 
-  // ─── Re-fetch when filter changes ───
+  // ─── Re-fetch when any filter / tab changes (debounced for text) ───
   useEffect(() => {
-    if (statusFilter) {
-      dispatch(fetchInvoices({ paymentStatus: statusFilter }));
-    } else {
-      dispatch(fetchInvoices({}));
+    const params: Record<string, string> = {};
+    if (statusFilter) params.paymentStatus = statusFilter;
+    if (searchTerm.trim()) params.search = searchTerm.trim();
+    if (batchFilter.trim()) params.batchNo = batchFilter.trim();
+    if (activeTab === "online" || activeTab === "onsite") {
+      params.mode = activeTab;
     }
-  }, [statusFilter, dispatch]);
+    if (activeTab === "deleted") {
+      params.deleted = "true";
+    }
+    const t = setTimeout(() => {
+      dispatch(fetchInvoices(params));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [statusFilter, searchTerm, batchFilter, activeTab, dispatch]);
+
+  // Helper to re-fetch the current view (respecting active tab/filters)
+  const currentQueryParams = (): Record<string, string> => {
+    const params: Record<string, string> = {};
+    if (statusFilter) params.paymentStatus = statusFilter;
+    if (searchTerm.trim()) params.search = searchTerm.trim();
+    if (batchFilter.trim()) params.batchNo = batchFilter.trim();
+    if (activeTab === "online" || activeTab === "onsite") params.mode = activeTab;
+    if (activeTab === "deleted") params.deleted = "true";
+    return params;
+  };
 
   // ─── Success / Error toasts ───
   useEffect(() => {
     if (success) {
       // toast.success("Invoice created successfully!");
       dispatch(clearInvoiceState());
-      dispatch(fetchInvoices({}));
+      dispatch(fetchInvoices(currentQueryParams()));
       resetForm();
     }
     if (error) {
@@ -131,6 +180,7 @@ const InstructorPlanSettings = () => {
     setManualAmount("");
     setSelectedPaymentMethod(null);
     setSelectedPaymentStatus(paymentStatusOptions[0]);
+    setSelectedMode(modeOptions[0]);
   };
 
   // ─── Manually charge a custom fee (description + amount) ───
@@ -232,6 +282,7 @@ const InstructorPlanSettings = () => {
         paymentMethod: form.paymentMethod,
         paymentStatus: form.paymentStatus,
         enrollmentDate: form.enrollmentDate,
+        mode: form.mode || "online",
         notes: form.notes,
         discount: form.discount || undefined,
         pendingAmount: form.pendingAmount
@@ -253,7 +304,7 @@ const InstructorPlanSettings = () => {
     const res: any = await dispatch(regenerateInvoicePdf(inv._id) as any);
     if (res.meta.requestStatus === "fulfilled" && res.payload?.pdfUrl) {
       window.open(res.payload.pdfUrl, "_blank");
-      dispatch(fetchInvoices(statusFilter ? { paymentStatus: statusFilter } : {}));
+      dispatch(fetchInvoices(currentQueryParams()));
     } else {
       toast.error(res.payload || "Could not generate the PDF");
     }
@@ -270,22 +321,31 @@ const InstructorPlanSettings = () => {
       setViewInvoice((prev) =>
         prev ? { ...prev, paymentStatus: newStatus, pdfUrl: res.payload?.pdfUrl ?? prev.pdfUrl } : prev
       );
-      dispatch(fetchInvoices(statusFilter ? { paymentStatus: statusFilter } : {}));
+      dispatch(fetchInvoices(currentQueryParams()));
     } else {
       toast.error(res.payload || "Could not update status");
     }
   };
 
-  // ─── Delete handler ───
+  // ─── Delete handler (soft delete — kept for superadmin audit) ───
   const handleDelete = () => {
     if (deleteId) {
       dispatch(deleteInvoice(deleteId))
         .unwrap()
         .then(() => {
-          toast.success("Invoice deleted successfully");
+          toast.success("Invoice moved to Deleted");
           setDeleteId(null);
         });
     }
+  };
+
+  // ─── Restore a soft-deleted invoice (superadmin) ───
+  const handleRestore = (id?: string) => {
+    if (!id) return;
+    dispatch(restoreInvoice(id))
+      .unwrap()
+      .then(() => toast.success("Invoice restored"))
+      .catch((e) => toast.error(e || "Could not restore invoice"));
   };
 
   // ─── View invoice handler ───
@@ -358,7 +418,7 @@ const InstructorPlanSettings = () => {
         .party { flex: 1; }
         .party-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
         .party h6 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-        .party p { margin-bottom: 2px; font-size: 12px; color: #555; }
+        .party p { margin-bottom: 2px; font-size: 12px; color: #1a1a1a; font-weight: 600; }
         .status-box { text-align: right; min-width: 120px; }
         .status-badge {
           display: inline-block;
@@ -369,7 +429,7 @@ const InstructorPlanSettings = () => {
           font-weight: 500;
           margin-bottom: 6px;
         }
-        .payment-method { font-size: 12px; color: #888; }
+        .payment-method { font-size: 12px; color: #333; font-weight: 600; }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
         th {
@@ -406,7 +466,7 @@ const InstructorPlanSettings = () => {
           margin-top: 8px;
         }
         .terms h6 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-        .terms p { font-size: 11px; color: #555; line-height: 1.6; }
+        .terms p { font-size: 11px; color: #333; font-weight: 500; line-height: 1.6; }
         .notes h6 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
         .notes p { font-size: 11px; color: #555; }
         .signature { text-align: center; min-width: 160px; }
@@ -426,7 +486,7 @@ const InstructorPlanSettings = () => {
       <div class="header">
         <div>
           <img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'" />
-          <p style="font-size:11px; color:#888; margin-top:4px;">Near HBL Bank Railway Road, Dunyapur, Pakistan</p>
+          <p style="font-size:11px; color:#333; font-weight:600; margin-top:4px;">Near HBL Bank Railway Road, Dunyapur, Pakistan</p>
         </div>
         <div class="header-right">
           <div class="invoice-title">INVOICE</div>
@@ -651,10 +711,42 @@ const InstructorPlanSettings = () => {
               </div>
               <InstructorSettingsLink />
 
-              {/* ═══════ INVOICE SECTION ═══════ */}
+              {/* ═══════ INVOICE SECTION (gated by receipt permission) ═══════ */}
+              {!canManageReceipts ? (
+                <div className="text-center text-muted border rounded p-5 my-4">
+                  <span className="avatar avatar-lg bg-light rounded-circle mb-3 d-inline-flex align-items-center justify-content-center">
+                    <i className="isax isax-lock fs-24" />
+                  </span>
+                  <h5 className="mb-1">Receipts access not enabled</h5>
+                  <p className="mb-0">
+                    You don&rsquo;t have permission to generate or view
+                    enrollment receipts. Please ask an administrator to enable
+                    the <strong>Receipts</strong> module for your account.
+                  </p>
+                </div>
+              ) : (
+              <>
               <div className="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
                 <h5 className="fs-18">Invoices</h5>
-                <div className="d-flex gap-2">
+                <div className="d-flex flex-wrap gap-2">
+                  {/* Search by receipt id / name / email / phone */}
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    style={{ width: 220 }}
+                    placeholder="Search id, name, email, phone"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  {/* Filter by batch no */}
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    style={{ width: 120 }}
+                    placeholder="Batch no"
+                    value={batchFilter}
+                    onChange={(e) => setBatchFilter(e.target.value)}
+                  />
                   {/* Status Filter */}
                   <div className="dropdown">
                     <Link
@@ -721,6 +813,41 @@ const InstructorPlanSettings = () => {
                 </div>
               </div>
 
+              {/* Record type tabs: All / Online / On-Site / Deleted (superadmin) */}
+              <ul className="nav nav-tabs nav-tabs-bottom mb-3">
+                {[
+                  { key: "all", label: "All" },
+                  { key: "online", label: "Online" },
+                  { key: "onsite", label: "On-Site" },
+                ].map((t) => (
+                  <li className="nav-item" key={t.key}>
+                    <Link
+                      to="#"
+                      className={`nav-link ${
+                        activeTab === t.key ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab(t.key as typeof activeTab)}
+                    >
+                      {t.label}
+                    </Link>
+                  </li>
+                ))}
+                {isSuperAdmin && (
+                  <li className="nav-item">
+                    <Link
+                      to="#"
+                      className={`nav-link text-danger ${
+                        activeTab === "deleted" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("deleted")}
+                    >
+                      <i className="isax isax-trash me-1" />
+                      Deleted
+                    </Link>
+                  </li>
+                )}
+              </ul>
+
               {/* Invoice Table */}
               {loading && !invoices.length ? (
                 <div className="text-center my-4">
@@ -737,6 +864,7 @@ const InstructorPlanSettings = () => {
                       <tr>
                         <th>#</th>
                         <th>Customer</th>
+                        <th>Type</th>
                         <th>Payment Method</th>
                         <th>Enrollment Date</th>
                         <th>Amount</th>
@@ -761,6 +889,17 @@ const InstructorPlanSettings = () => {
                                 {inv.customerEmail}
                               </small>
                             </div>
+                          </td>
+                          <td>
+                            <span
+                              className={`badge badge-sm rounded-pill ${
+                                inv.mode === "onsite"
+                                  ? "bg-warning"
+                                  : "bg-primary-transparent"
+                              }`}
+                            >
+                              {inv.mode === "onsite" ? "On-Site" : "Online"}
+                            </span>
                           </td>
                           <td>{inv.paymentMethod}</td>
                           <td>
@@ -797,17 +936,28 @@ const InstructorPlanSettings = () => {
                               >
                                 <i className="isax isax-import" />
                               </button>
-                              {/* Delete */}
-                              <Link
-                                to="#"
-                                className="d-inline-flex fs-14 action-icon text-danger"
-                                title="Delete"
-                                data-bs-toggle="modal"
-                                data-bs-target="#delete_invoice_modal"
-                                onClick={() => setDeleteId(inv._id || "")}
-                              >
-                                <i className="isax isax-trash" />
-                              </Link>
+                              {/* Delete (soft) or Restore in the Deleted view */}
+                              {activeTab === "deleted" ? (
+                                <button
+                                  type="button"
+                                  className="d-inline-flex fs-14 action-icon btn btn-link p-0 text-success"
+                                  title="Restore"
+                                  onClick={() => handleRestore(inv._id)}
+                                >
+                                  <i className="isax isax-refresh" />
+                                </button>
+                              ) : (
+                                <Link
+                                  to="#"
+                                  className="d-inline-flex fs-14 action-icon text-danger"
+                                  title="Delete"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#delete_invoice_modal"
+                                  onClick={() => setDeleteId(inv._id || "")}
+                                >
+                                  <i className="isax isax-trash" />
+                                </Link>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -815,6 +965,8 @@ const InstructorPlanSettings = () => {
                     </tbody>
                   </table>
                 </div>
+              )}
+              </>
               )}
             </div>
           </div>
@@ -910,6 +1062,26 @@ const InstructorPlanSettings = () => {
                       value={form.batchNo}
                       onChange={handleInputChange}
                       placeholder="e.g. 1, 2, 3 ... 7"
+                    />
+                  </div>
+                </div>
+
+                {/* ─── Record type: Online vs On-Site ─── */}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Invoice Type <span className="text-danger">*</span>
+                    </label>
+                    <CustomSelect
+                      options={modeOptions}
+                      value={selectedMode}
+                      className="select"
+                      placeholder="Select Type"
+                      modal={true}
+                      onChange={(val: OptionType) => {
+                        setSelectedMode(val);
+                        setForm({ ...form, mode: val.value as string });
+                      }}
                     />
                   </div>
                 </div>
@@ -1501,8 +1673,8 @@ const InstructorPlanSettings = () => {
               <div>
                 <h4 className="mb-2">Delete Invoice</h4>
                 <p className="mb-3">
-                  Are you sure you want to delete this invoice? This action
-                  cannot be undone.
+                  This invoice will be moved to the Deleted section. A
+                  superadmin can restore it later if needed.
                 </p>
                 <div className="d-flex align-items-center justify-content-center">
                   <Link

@@ -200,7 +200,7 @@ const StudentDashboard = () => {
                           <i className="isax isax-messages-2 fs-24 text-info" />
                         </span>
                         <div>
-                          <span className="d-block">Community</span>
+                          <span className="d-block">Blucrew</span>
                           <Link
                             to={all_routes.studentMessage}
                             className="link-primary fw-semibold"

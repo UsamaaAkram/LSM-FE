@@ -193,7 +193,7 @@ const ContactUs = () => {
                           />
                         </a>
                         <a
-                          href="https://www.youtube.com/@bluversedigitalhubofficial"
+                          href="https://www.youtube.com/@BluverseDigitalHub"
                           target="_blank"
                           rel="noopener noreferrer"
                           title="YouTube"

@@ -24,6 +24,7 @@ import CourseCategoryThree from "../Courses/course-category-three/courseCategory
 import CourseCheckout from "../Courses/course-checkout/courseCheckout";
 import CourseDetailsTwo from "../Courses/course-details-2/courseDetailsTwo";
 import CourseDetails from "../Courses/course-details/courseDetails";
+import CourseGrid from "../Courses/courses-grid/courseGrid";
 import CourseResume from "../Courses/course-resume/courseResume";
 import CourseWatch from "../Courses/course-watch/courseWatch";
 import HomeOne from "../HomePages/home-one/homeone";
@@ -51,6 +52,7 @@ import InstructorTickets from "../Instructor/instructor-tickets/instructorTicket
 import StudentGrid from "../Instructor/student-grid/studentGrid";
 import StudentList from "../Instructor/student-list/studentList";
 import AboutUs from "../Pages/about-us/aboutUs";
+import Services from "../Pages/services/services";
 import BecomeInstructor from "../Pages/become-instructor/becomeInstructor";
 import ContactUs from "../Pages/contact-us/contactUs";
 import Faq from "../Pages/faq/faq";
@@ -165,6 +167,11 @@ export const publicRoutes = [
   },
 
   {
+    path: routes.courseGrid,
+    element: <CourseGrid />,
+    route: Route,
+  },
+  {
     path: routes.courseDetails,
     element: <CourseDetails />,
     route: Route,
@@ -222,6 +229,11 @@ export const publicRoutes = [
   {
     path: routes.blogDetails,
     element: <BlogDetails />,
+    route: Route,
+  },
+  {
+    path: routes.services,
+    element: <Services />,
     route: Route,
   },
   {

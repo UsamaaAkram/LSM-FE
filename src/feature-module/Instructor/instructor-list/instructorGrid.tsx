@@ -6,6 +6,7 @@ import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import Table from "../../../core/common/dataTable/index";
 import {
   createInstructor,
+  deleteInstructor,
   getAllInstructors,
   updateInstructorProfile,
 } from "../../../core/redux/instructor";
@@ -43,6 +44,26 @@ const AllInstructorGrid = () => {
   useEffect(() => {
     dispatch(getAllInstructors() as any);
   }, [dispatch]);
+
+  const handleDeleteInstructor = async (record: any) => {
+    const id = record?.id || record?._id;
+    if (!id) return;
+    const name =
+      record.firstName || record.userName || "this instructor";
+    if (
+      !window.confirm(
+        `Delete ${name}? This permanently removes the instructor account.`
+      )
+    )
+      return;
+    const res: any = await dispatch(deleteInstructor(id) as any);
+    if (deleteInstructor.fulfilled.match(res)) {
+      toast.success("Instructor deleted");
+      dispatch(getAllInstructors() as any);
+    } else {
+      toast.error((res.payload as string) || "Could not delete instructor");
+    }
+  };
 
   const handleCreateInstructor = async () => {
     if (
@@ -162,9 +183,24 @@ const AllInstructorGrid = () => {
     {
       title: "Actions",
       render: (_: any, record: any) => (
-        <button className="btn btn-sm" onClick={() => handleEdit(record)}>
-          <i className="isax isax-edit-2" />
-        </button>
+        <div className="d-flex align-items-center">
+          <button
+            className="btn btn-sm"
+            title="Edit"
+            onClick={() => handleEdit(record)}
+          >
+            <i className="isax isax-edit-2" />
+          </button>
+          {isAdmin && (
+            <button
+              className="btn btn-sm text-danger"
+              title="Delete"
+              onClick={() => handleDeleteInstructor(record)}
+            >
+              <i className="isax isax-trash" />
+            </button>
+          )}
+        </div>
       ),
     },
   ];

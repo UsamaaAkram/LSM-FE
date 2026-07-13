@@ -27,6 +27,8 @@ const AddNewCourse: React.FC = () => {
   const [courseDescription, setCourseDescription] = useState("");
   const [courseThumbnail, setCourseThumbnail] = useState<File | null>(null);
   const [courseThumbnailUrl, setCourseThumbnailUrl] = useState("");
+  const [price, setPrice] = useState<string>("");
+  const [originalPrice, setOriginalPrice] = useState<string>("");
   const [curriculum, setCurriculum] = useState<
     {
       topic: string;
@@ -204,6 +206,8 @@ const AddNewCourse: React.FC = () => {
       courseDescription,
       courseThumbnail,
       courseThumbnailUrl: "",
+      price: Number(price) || 0,
+      originalPrice: Number(originalPrice) || 0,
       curriculum,
       notes,
       studentCount: 0,
@@ -367,6 +371,40 @@ const AddNewCourse: React.FC = () => {
                                   {errors.courseLevel}
                                 </div>
                               )}
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="input-block">
+                              <label className="form-label">
+                                Price (Rs){" "}
+                                <small className="text-muted">(optional)</small>
+                              </label>
+                              <input
+                                type="number"
+                                className="form-control"
+                                placeholder="e.g. 15000"
+                                value={price}
+                                onChange={(e) => setPrice(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="input-block">
+                              <label className="form-label">
+                                Original Price (Rs){" "}
+                                <small className="text-muted">
+                                  (crossed-out, optional)
+                                </small>
+                              </label>
+                              <input
+                                type="number"
+                                className="form-control"
+                                placeholder="e.g. 25000"
+                                value={originalPrice}
+                                onChange={(e) =>
+                                  setOriginalPrice(e.target.value)
+                                }
+                              />
                             </div>
                           </div>
                           <div className="col-md-4">

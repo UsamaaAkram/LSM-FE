@@ -91,6 +91,7 @@ export const all_routes = {
   termsConditions: "/terms-conditions",
   contactUs: "pages/contact-us",
   about_us: "/pages/about-us",
+  services: "/pages/services",
   invoices: "/pages/invoices",
   FAQ: "/pages/faq",
   pricingPlan: "/pages/pricing-plan",

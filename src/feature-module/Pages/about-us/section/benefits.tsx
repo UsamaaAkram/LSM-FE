@@ -26,9 +26,12 @@ const Benefits = () => {
                       alt="img"
                     />
                   </div>
-                  <div className="p-4 rounded-pill bg-primary-transparent d-inline-flex">
-                    <i className="isax isax-book-1 fs-24" />
-                  </div>
+                  <ImageWithBasePath
+                    src="assets/img/about-earning.png"
+                    alt="Real Earning Methods"
+                    className="img-fluid mb-2"
+                    style={{ height: 90, width: "auto" }}
+                  />
                   <h5 className="mt-3 mb-1">Real Earning Methods</h5>
                   <p>
                     Learn practical, proven ways to earn through social media —
@@ -46,9 +49,12 @@ const Benefits = () => {
                       alt="img"
                     />
                   </div>
-                  <div className="p-4 rounded-pill bg-secondary-transparent d-inline-flex">
-                    <i className="isax isax-bookmark5 fs-24" />
-                  </div>
+                  <ImageWithBasePath
+                    src="assets/img/about-roadmap.png"
+                    alt="Beginner to Pro Roadmap"
+                    className="img-fluid mb-2"
+                    style={{ height: 90, width: "auto" }}
+                  />
                   <h5 className="mt-3 mb-1">Beginner to Pro Roadmap</h5>
                   <p>
                     A clear, step-by-step path designed to take you from
@@ -67,9 +73,12 @@ const Benefits = () => {
                       alt="img"
                     />
                   </div>
-                  <div className="p-4 rounded-pill bg-skyblue-transparent d-inline-flex">
-                    <i className="isax isax-chart-26 fs-24" />
-                  </div>
+                  <ImageWithBasePath
+                    src="assets/img/about-monetisation.png"
+                    alt="Content Monetisation System"
+                    className="img-fluid mb-2"
+                    style={{ height: 90, width: "auto" }}
+                  />
                   <h5 className="mt-3 mb-1">Content Monetization System</h5>
                   <p>
                     Discover how to turn your content into a sustainable income

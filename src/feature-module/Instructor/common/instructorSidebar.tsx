@@ -94,10 +94,12 @@ const InstructorSidebar = () => {
   // Helper to match module to sidebar title (normalize name)
   const canAccess = (menu: any) => {
     if (!modulesAccess) return true; // admin or other: full access
+    // Prefer an explicit module key; else normalize the title
+    const target = (
+      menu.module || menu.title.replace(/\s+/g, "")
+    ).toLowerCase();
     const mod = modulesAccess.find(
-      (item: any) =>
-        item.name.toLowerCase() ===
-        menu.title.replace(/\s+/g, "").toLowerCase()
+      (item: any) => item.name.toLowerCase() === target
     );
     return !mod?.isDisable;
   };

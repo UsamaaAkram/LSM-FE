@@ -27,6 +27,8 @@ export interface Course {
   courseThumbnail?: File | null; // For upload
   courseVideoProvider?: string | number;
   courseVideoUrl?: string;
+  price?: number;
+  originalPrice?: number;
   curriculum: Topic[];
   notes: string;
   status?: string;

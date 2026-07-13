@@ -39,6 +39,8 @@ const EditCourse: React.FC = () => {
   const [courseDescription, setCourseDescription] = useState("");
   const [courseThumbnail, setCourseThumbnail] = useState<File | null>(null);
   const [courseThumbnailUrl, setCourseThumbnailUrl] = useState("");
+  const [price, setPrice] = useState<string>("");
+  const [originalPrice, setOriginalPrice] = useState<string>("");
   const [duration, setDuration] = useState<string>("");
   const [curriculum, setCurriculum] = useState<
     {
@@ -84,6 +86,14 @@ const EditCourse: React.FC = () => {
       setCourseLevel(currentCourse.courseLevel || "");
       setCourseDescription(currentCourse.courseDescription || "");
       setCourseThumbnailUrl(currentCourse.courseThumbnailUrl || "");
+      setPrice(
+        currentCourse.price != null ? String(currentCourse.price) : ""
+      );
+      setOriginalPrice(
+        currentCourse.originalPrice != null
+          ? String(currentCourse.originalPrice)
+          : ""
+      );
       // Normalize lessons so every lesson has a vdoId field (older courses lack it)
       setCurriculum(
         (currentCourse.curriculum || []).map((t: any) => ({
@@ -242,6 +252,8 @@ const EditCourse: React.FC = () => {
       courseDescription,
       courseThumbnail,
       courseThumbnailUrl,
+      price: Number(price) || 0,
+      originalPrice: Number(originalPrice) || 0,
       curriculum,
       notes,
       studentCount: currentCourse?.studentCount || 0,
@@ -450,6 +462,38 @@ const EditCourse: React.FC = () => {
                                   {errors.courseLevel}
                                 </div>
                               )}
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="input-block">
+                              <label className="form-label">
+                                Price (Rs){" "}
+                                <small className="text-muted">(optional)</small>
+                              </label>
+                              <input
+                                type="number"
+                                className="form-control"
+                                placeholder="e.g. 15000"
+                                value={price}
+                                onChange={(e) => setPrice(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="input-block">
+                              <label className="form-label">
+                                Original Price (Rs){" "}
+                                <small className="text-muted">
+                                  (crossed-out, optional)
+                                </small>
+                              </label>
+                              <input
+                                type="number"
+                                className="form-control"
+                                placeholder="e.g. 25000"
+                                value={originalPrice}
+                                onChange={(e) => setOriginalPrice(e.target.value)}
+                              />
                             </div>
                           </div>
                           <div className="col-md-4">
