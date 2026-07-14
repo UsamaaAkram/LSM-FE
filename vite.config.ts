@@ -10,32 +10,11 @@ export default defineConfig({
    },
  },
   build: {
-    // Split heavy vendor libs into their own cached chunks so the initial
-    // JS payload is smaller and long-term caching works better.
+    // NOTE: no custom manualChunks here. Manually splitting the React runtime
+    // (react / react-dom / scheduler) across chunks causes out-of-order init
+    // and the "Cannot set properties of undefined (setting 'Children')" crash.
+    // Vite's default chunking is safe. Revisit perf via route-level lazy
+    // loading (React.lazy + Suspense) instead of vendor splitting.
     chunkSizeWarningLimit: 1500,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react-router') || id.includes('react-dom') || /[\\/]react[\\/]/.test(id)) {
-              return 'react-vendor';
-            }
-            if (id.includes('@reduxjs') || id.includes('react-redux') || id.includes('redux')) {
-              return 'redux-vendor';
-            }
-            if (id.includes('antd') || id.includes('rc-') || id.includes('@ant-design')) {
-              return 'antd-vendor';
-            }
-            if (id.includes('moment') || id.includes('dayjs')) {
-              return 'date-vendor';
-            }
-            if (id.includes('apexcharts') || id.includes('chart') || id.includes('fullcalendar')) {
-              return 'charts-vendor';
-            }
-            return 'vendor';
-          }
-        },
-      },
-    },
   },
 })

@@ -18,7 +18,16 @@ import studentDashboardSlice from "./studentDashboardSlice";
 import studentCertificatesSlice from "./studentCertificatesSlice";
 import invoiceSlice from "./invoiceSlice";
 
-import { persistStore, persistReducer } from "redux-persist";
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+} from "redux-persist";
 import storage from "redux-persist/lib/storage"; // uses localStorage for web
 
 const rootReducer = combineReducers({
@@ -52,6 +61,15 @@ const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,
+  // redux-persist dispatches internal actions (REGISTER/REHYDRATE/…) that
+  // carry non-serializable values. They're safe — tell RTK's serializable
+  // check to ignore them so the console stays clean.
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
 });
 export const persistor = persistStore(store);
 
