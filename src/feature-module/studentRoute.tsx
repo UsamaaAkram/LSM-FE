@@ -25,6 +25,13 @@ const StudentRoute: React.FC = () => {
     return <Navigate to={all_routes?.login} state={{ from: location }} replace />;
   }
 
+  // Role guard: only students may access student routes. Instructors/admins
+  // (or anyone with the wrong role) are sent to the main page — no rendering
+  // of student pages via manual URL manipulation.
+  if (user.role !== "student") {
+    return <Navigate to="/" replace />;
+  }
+
   // Wait for studentProfile.student to be loaded (avoid premature redirect/render)
   // if (
   //   user.role === "student" &&

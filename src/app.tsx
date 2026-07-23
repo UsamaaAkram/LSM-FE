@@ -18,6 +18,21 @@ const App = () => {
     AOS.refresh();
   }, []);
 
+  // Attach the JWT to every API request (unless the caller already set one),
+  // so role/enrollment-gated endpoints (invoices, video OTP, …) authenticate
+  // without each thunk wiring the header by hand.
+  useEffect(() => {
+    const reqId = axios.interceptors.request.use((config) => {
+      const token = store.getState().auth?.token;
+      if (token && !config.headers?.Authorization) {
+        config.headers = config.headers || {};
+        (config.headers as any).Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+    return () => axios.interceptors.request.eject(reqId);
+  }, []);
+
   // Global auth-expiry guard: if any API call comes back 401 because the JWT
   // is missing/expired, clear the persisted session and send the user to
   // /login instead of leaving them "logged in" but stuck on a dead error

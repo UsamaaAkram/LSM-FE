@@ -5,6 +5,7 @@ import Feature from "../feature";
 import AuthFeature from "../authFeature";
 import ProtectedRoutes from "../privateRoute";
 import StudentRoute from "../studentRoute";
+import InstructorAdminRoute from "../instructorAdminRoute";
 import Error404 from "../auth/error/error-404/error400";
 
 const ALLRoutes: React.FC = () => {
@@ -42,11 +43,15 @@ const ALLRoutes: React.FC = () => {
         </Route>
 
         <Route element={<ProtectedRoutes />}>
-          {protectedRoutes
-            .filter((route) => !studentProtectedPaths.includes(route.path)) // All except student
-            .map((route, idx) => (
-              <Route path={route.path} element={route.element} key={idx} />
-            ))}
+          {/* Instructor/admin group — students are blocked (sent to main page)
+              even via manual URL manipulation. */}
+          <Route element={<InstructorAdminRoute />}>
+            {protectedRoutes
+              .filter((route) => !studentProtectedPaths.includes(route.path)) // All except student
+              .map((route, idx) => (
+                <Route path={route.path} element={route.element} key={idx} />
+              ))}
+          </Route>
 
           <Route element={<StudentRoute />}>
             {protectedRoutes
