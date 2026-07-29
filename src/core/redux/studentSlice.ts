@@ -75,7 +75,14 @@ export interface StudentInfo {
   bio?: string;
   photo?: string;
   isDisable?: boolean;
-  current_logged_in_locations?: string[];
+  activeSessions?: {
+    sessionId: string;
+    device: string;
+    browser: string;
+    ip?: string;
+    loginTime: string;
+    lastActiveTime: string;
+  }[];
   isDeactivated?: boolean;
 }
 export interface Administrative {

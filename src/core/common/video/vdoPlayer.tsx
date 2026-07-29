@@ -53,6 +53,8 @@ const VdoPlayer = ({
     null
   );
   const [error, setError] = useState<string | null>(null);
+  // Bumped to force a fresh OTP fetch when the user hits "Try again".
+  const [retryCount, setRetryCount] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   // Always-current furthest-watched point, used to resume on metadata load.
   const resumeRef = useRef<number>(0);
@@ -82,33 +84,66 @@ const VdoPlayer = ({
       .post(
         `${API_URL}/api/videos/${vdoId}/otp`,
         { courseId },
-        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+        {
+          // A hung request otherwise leaves the spinner showing forever
+          // with no feedback — surface it as a retryable error instead.
+          timeout: 15000,
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+        }
       )
       .then((res) => {
         if (active) setEmbed(res.data);
       })
       .catch((e) => {
-        if (active)
-          setError(e.response?.data?.error || "Unable to load protected video");
+        if (!active) return;
+        setError(
+          e.code === "ECONNABORTED"
+            ? "Video is taking too long to load. Check your connection and try again."
+            : e.response?.data?.error || "Unable to load protected video"
+        );
       });
     return () => {
       active = false;
     };
-  }, [vdoId, courseId, token]);
+  }, [vdoId, courseId, token, retryCount]);
 
   // 2) Once the iframe is rendered, attach the SDK + progress listeners
   useEffect(() => {
     if (!embed || !iframeRef.current) return;
     let disposed = false;
     let cleanup: (() => void) | null = null;
+    const iframe = iframeRef.current;
 
-    loadVdoScript()
+    // Wait for the iframe's own `load` event, not just the SDK script.
+    // Calling getInstance() as soon as the script resolves races the
+    // iframe's content — on slower devices/connections the SDK isn't
+    // attached to anything yet, which is what produced the intermittent
+    // stuck-loading / blank-screen player. VdoCipher's own docs call for
+    // attaching on the iframe's load event for this reason.
+    const iframeLoaded = new Promise<void>((resolve) => {
+      iframe.addEventListener("load", () => resolve(), { once: true });
+    });
+    // Belt-and-suspenders: if something upstream (SDK or iframe) never
+    // settles, surface a retryable error instead of an infinite spinner.
+    const stuckTimer = setTimeout(() => {
+      if (!disposed) setError("Video player took too long to load. Please try again.");
+    }, 20000);
+
+    Promise.all([loadVdoScript(), iframeLoaded])
       .then(() => {
+        clearTimeout(stuckTimer);
         if (disposed || !iframeRef.current) return;
         const W = window as any;
-        if (!W.VdoPlayer) return;
+        if (!W.VdoPlayer) {
+          setError("Failed to load the secure video player");
+          return;
+        }
         const player = W.VdoPlayer.getInstance(iframeRef.current);
-        const v = player.video; // HTMLVideoElement-like API
+        const v = player?.video; // HTMLVideoElement-like API
+        if (!v) {
+          setError("Failed to load the secure video player");
+          return;
+        }
 
         const onMeta = () => {
           setDuration(v.duration || 0);
@@ -168,15 +203,34 @@ const VdoPlayer = ({
           v.removeEventListener("seeked", onSeek);
         };
       })
-      .catch(() => setError("Failed to load the secure video player"));
+      .catch(() => {
+        clearTimeout(stuckTimer);
+        setError("Failed to load the secure video player");
+      });
 
     return () => {
       disposed = true;
+      clearTimeout(stuckTimer);
       if (cleanup) cleanup();
     };
   }, [embed, setDuration, setWatchedSegments]);
 
-  if (error) return <div className="alert alert-danger">{error}</div>;
+  if (error)
+    return (
+      <div className="alert alert-danger d-flex align-items-center justify-content-between">
+        <span>{error}</span>
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-danger ms-3"
+          onClick={() => {
+            setError(null);
+            setRetryCount((c) => c + 1);
+          }}
+        >
+          Try again
+        </button>
+      </div>
+    );
   if (!embed)
     return (
       <div className="text-center py-5">
@@ -199,7 +253,7 @@ const VdoPlayer = ({
           border: 0,
           borderRadius: 8,
         }}
-        allow="encrypted-media"
+        allow="autoplay; encrypted-media; fullscreen"
         allowFullScreen
       />
     </div>

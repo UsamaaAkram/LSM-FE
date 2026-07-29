@@ -150,8 +150,6 @@ const StudentsDetails = () => {
           isDisable: values.isDisable,
           bio: profile?.student?.bio || "",
           cnic: profile?.student?.cnic || "",
-          current_logged_in_locations:
-            profile?.student?.current_logged_in_locations || [],
           isDeactivated: profile?.student?.isDeactivated || false,
         },
         administrative: {

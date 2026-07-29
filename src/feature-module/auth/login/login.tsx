@@ -38,21 +38,41 @@ const Login = () => {
   // Redux state
   const { loading } = useSelector((state: any) => state.auth);
 
-const handleSubmit = async (event: React.FormEvent) => {
-  event.preventDefault();
-  try {
-    const res = await dispatch(loginUser({ email, password }) as any);
+  // Populated when login is rejected for hitting the 2-device cap — lets the
+  // user pick one of their existing sessions to log out and continue.
+  type DeviceSession = {
+    id: string;
+    device: string;
+    browser: string;
+    lastActiveTime: string;
+  };
+  const [deviceSessions, setDeviceSessions] = useState<DeviceSession[] | null>(
+    null
+  );
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const goToDashboard = (user: any) => {
+    window.location.pathname =
+      user?.role === "instructor"
+        ? user?.isDisable === true
+          ? route.approvalScreen
+          : route.instructorDashboard
+        : user?.role === "admin"
+        ? route.instructorDashboard
+        : route.studentDashboard;
+  };
+
+  const attemptLogin = async (removeSessionId?: string) => {
+    const res = await dispatch(
+      loginUser({ email, password, removeSessionId }) as any
+    );
     if (res.meta.requestStatus === "fulfilled") {
+      setDeviceSessions(null);
       toast.success("Login successful!");
-      window.location.pathname =
-        res.payload?.user?.role === "instructor"
-          ? res.payload?.user?.isDisable === true
-            ? route.approvalScreen
-            : route.instructorDashboard
-          : res.payload?.user?.role === "admin"
-          ? route.instructorDashboard
-          : route.studentDashboard;
-    } else if (res.meta.requestStatus === "rejected") {
+      goToDashboard(res.payload?.user);
+      return;
+    }
+    if (res.meta.requestStatus === "rejected") {
       // Unverified email → send the user to the OTP page to verify
       if (res.payload?.needsVerification) {
         toast.info(
@@ -64,15 +84,37 @@ const handleSubmit = async (event: React.FormEvent) => {
         )}`;
         return;
       }
+      // Already signed in on 2 devices — show them so the user can free a slot
+      if (res.payload?.limitReached) {
+        setDeviceSessions(res.payload.sessions || []);
+        return;
+      }
+      setDeviceSessions(null);
       toast.error(
         res.payload?.message || "Login failed. Please check your credentials."
       );
     }
-  } catch (error: any) {
-    toast.error(error?.message || "Unexpected error during login.");
-  }
-  // Error is handled by Redux slice, displayed below
-};
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      await attemptLogin();
+    } catch (error: any) {
+      toast.error(error?.message || "Unexpected error during login.");
+    }
+  };
+
+  const handleRemoveSession = async (sessionId: string) => {
+    setRemovingId(sessionId);
+    try {
+      await attemptLogin(sessionId);
+    } catch (error: any) {
+      toast.error(error?.message || "Unexpected error during login.");
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   return (
     <div className="main-wrapper">
@@ -187,7 +229,40 @@ const handleSubmit = async (event: React.FormEvent) => {
                         </Link>
                       </div>
                     </div>
-                    {/* Show error if authentication fails */}
+                    {deviceSessions && deviceSessions.length > 0 && (
+                      <div className="alert alert-warning mb-3">
+                        <p className="mb-2 fw-semibold">
+                          You're already signed in on 2 devices. Log out one
+                          to continue:
+                        </p>
+                        {deviceSessions.map((s) => (
+                          <div
+                            key={s.id}
+                            className="d-flex align-items-center justify-content-between mb-2 p-2 bg-white rounded border"
+                          >
+                            <div>
+                              <div className="fw-semibold">
+                                {s.device} &middot; {s.browser}
+                              </div>
+                              <div className="text-muted" style={{ fontSize: 12 }}>
+                                Last active{" "}
+                                {new Date(s.lastActiveTime).toLocaleString()}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger"
+                              disabled={loading || removingId === s.id}
+                              onClick={() => handleRemoveSession(s.id)}
+                            >
+                              {removingId === s.id
+                                ? "Logging out..."
+                                : "Log out & sign in here"}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div className="d-grid">
                       <button
                         className="btn btn-secondary btn-lg"

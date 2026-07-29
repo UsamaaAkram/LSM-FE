@@ -67,17 +67,23 @@ export const registerUser = createAsyncThunk(
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (
-    { email, password }: { email: string; password: string },
+    {
+      email,
+      password,
+      removeSessionId,
+    }: { email: string; password: string; removeSessionId?: string },
     thunkAPI
   ) => {
     try {
       const response = await axios.post(`${Base_URL}/auth/login`, {
         email,
         password,
+        removeSessionId,
       });
       return response.data; // Expect {user, token}
     } catch (error: any) {
       // Return the full error payload so callers can detect needsVerification
+      // / limitReached (2-device cap hit — payload includes `sessions`)
       return thunkAPI.rejectWithValue(
         error.response?.data || { message: "Login failed" }
       );
