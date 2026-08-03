@@ -473,14 +473,31 @@ const CourseWatch = () => {
                         </h6>
                         <p>{currentCourse?.course.courseTitle}</p>
                       </div>
-                      <div className="mb-4">
-                        <h6 className="fs-18 fw-semibold mb-2">Description</h6>
-                        <div
-                          dangerouslySetInnerHTML={{
-                            __html: currentCourse?.course.courseDescription,
-                          }}
-                        />
-                      </div>
+                      {showVideo && lesson?.name ? (
+                        <div className="mb-4">
+                          <h6 className="fs-18 fw-semibold mb-2">
+                            {lesson.name}
+                          </h6>
+                          {lesson.description ? (
+                            <p style={{ whiteSpace: "pre-wrap" }}>
+                              {lesson.description}
+                            </p>
+                          ) : (
+                            <p className="text-muted mb-0">
+                              No description added for this lesson yet.
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="mb-4">
+                          <h6 className="fs-18 fw-semibold mb-2">Description</h6>
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: currentCourse?.course.courseDescription,
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                     <div className="tab-pane" id="notes" role="tabpanel">
                       <div className="mb-0">

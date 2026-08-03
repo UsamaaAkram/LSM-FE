@@ -253,13 +253,38 @@ const StudentsDetails = () => {
                       Student Details
                       <div>
                         <label className="form-label mb-1 me-2">
-                          Account is {!values.isDisable ? "active" : "inactive"}
+                          Account is {!values.isDisable ? "🟢 Active" : "🔴 Inactive"}
                         </label>
                         <Switch
-                          checked={values.isDisable}
-                          onChange={(checked) =>
-                            setFieldValue("isDisable", checked)
-                          }
+                          checked={!values.isDisable}
+                          onChange={(checked) => {
+                            // Toggle ON = Active (checked reflects "active", not
+                            // isDisable directly — inverted mapping was the bug).
+                            // Saves instantly instead of waiting for the full
+                            // form submit, with rollback if the request fails.
+                            const previousIsDisable = values.isDisable;
+                            setFieldValue("isDisable", !checked);
+                            if (!studentId) return;
+                            dispatch(
+                              updateStudentProfile({
+                                id: studentId,
+                                data: { student: { isDisable: !checked } },
+                                isAdminUpdate: true,
+                              }) as any
+                            )
+                              .unwrap()
+                              .then(() => {
+                                toast.success(
+                                  `Account marked ${checked ? "active" : "inactive"}.`
+                                );
+                              })
+                              .catch(() => {
+                                setFieldValue("isDisable", previousIsDisable);
+                                toast.error(
+                                  "Could not update account status. Please try again."
+                                );
+                              });
+                          }}
                         />
                       </div>
                     </div>

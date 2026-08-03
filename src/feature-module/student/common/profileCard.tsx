@@ -46,7 +46,7 @@ const ProfileCard = () => {
                   ? `${userData?.firstName ?? ""} ${userData?.lastName ?? ""}`
                   : userData?.userName ?? userData?.name}
                 <Link
-                  to={all_routes.instructorsettings}
+                  to={all_routes.studentSettings}
                   className="link-light fs-16 ms-2"
                   title="Edit Profile"
                 >

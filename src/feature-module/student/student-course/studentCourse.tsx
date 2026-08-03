@@ -69,8 +69,8 @@ const StudentCourse = () => {
                         </div>
                         <div className="course-content">
                           <div className="d-flex justify-content-between mb-2">
-                            <span className="badge badge-light rounded-pill bg-light d-inline-flex align-items-center fs-13 fw-medium mb-0">
-                              {course.createdBy}
+                            <span className="text-muted fs-13 fw-medium mb-0">
+                              {course.courseLevel}
                             </span>
                             <span className="badge badge-light rounded-pill bg-light d-inline-flex align-items-center fs-13 fw-medium mb-0">
                               {course.courseCategory}

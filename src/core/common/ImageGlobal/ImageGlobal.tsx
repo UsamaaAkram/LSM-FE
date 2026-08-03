@@ -38,7 +38,6 @@ const ImageGlobal: React.FC<ImageGlobalProps> = ({
       className={className}
       style={{ objectFit: "cover", borderRadius: 4, ...style, width, height }}
       onError={handleError}
-      crossOrigin="anonymous"
       onClick={onClick}
     />
   );
