@@ -14,8 +14,9 @@ type OptionType = { label: string; value: string | number };
 
 const statusOptions: OptionType[] = [
   { label: "Opened", value: "Opened" },
-  { label: "Closed", value: "Closed" },
   { label: "Inprogress", value: "Inprogress" },
+  { label: "Resolved", value: "Resolved" },
+  { label: "Closed", value: "Closed" },
 ];
 
 interface TicketFormValues {
@@ -190,7 +191,8 @@ const TicketModal: React.FC<TicketModalProps> = ({
                     </div>
                     <div className="col-md-12 mb-3">
                       <label className="form-label">
-                        Description <span className="text-danger">*</span>
+                        Describe Your Issue{" "}
+                        <span className="text-danger">*</span>
                       </label>
                       <DefaultEditor
                         value={values.Description}

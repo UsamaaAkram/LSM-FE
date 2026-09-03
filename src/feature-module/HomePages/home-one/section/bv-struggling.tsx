@@ -1,21 +1,24 @@
 import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
 
+// Custom artwork supplied by the client (Drive), replacing the earlier opaque
+// 1.3MB-per-icon exports. These are transparent and ~30x smaller — see
+// public/assets/img/bluverse/README.md.
 const points = [
   {
     text: "Posting content but no growth?",
-    icon: "assets/img/struggle-growth.png",
+    icon: "assets/img/bluverse/problem-no-growth.png",
   },
   {
     text: "Don’t know how to monetize?",
-    icon: "assets/img/struggle-monetise.png",
+    icon: "assets/img/bluverse/problem-no-monetization.png",
   },
   {
     text: "Confused about AI tools & strategies?",
-    icon: "assets/img/struggle-ai.png",
+    icon: "assets/img/bluverse/problem-ai-confusion.png",
   },
   {
     text: "No clear roadmap to success?",
-    icon: "assets/img/struggle-roadmap.png",
+    icon: "assets/img/bluverse/problem-no-roadmap.png",
   },
 ];
 
@@ -26,6 +29,13 @@ const BvStruggling = () => {
       <section className="master-skill-three">
         <div className="container">
           <div className="home-five-head text-center mx-auto" data-aos="fade-up">
+            <span className="text-secondary fw-semibold text-uppercase d-inline-block mb-2" style={{ letterSpacing: 1 }}>
+              The Problem
+            </span>
+            <div
+              className="text-secondary mx-auto mb-3"
+              style={{ width: 48, height: 3, backgroundColor: "currentColor" }}
+            />
             <h2>Struggling to Grow Online or Earn from Content?</h2>
           </div>
           <div className="skils-group mt-4">

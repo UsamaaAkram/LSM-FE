@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router";
 import BackToTop from "../core/common/backtotop/backToTop";
 import Header from "../core/common/header/header";
 import WhatsappFloat from "../core/common/whatsappFloat/whatsappFloat";
+import Footer from "./HomePages/home-one/footer";
 
 const Feature = () => {
   const location = useLocation();
@@ -18,6 +19,7 @@ const Feature = () => {
         >
           <Header />
           <Outlet />
+          <Footer />
           <BackToTop />
           <WhatsappFloat />
         </div>

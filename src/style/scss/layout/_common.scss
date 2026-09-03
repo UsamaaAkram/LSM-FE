@@ -71,3 +71,113 @@ hr {
 .shadow-sm {
     box-shadow: variables.$box-shadow-xs-2;
 }
+
+// Global hover states (#4.8) — course cards, table rows, sidebar nav, and
+// chat/announcement list rows didn't have any hover feedback. Buttons
+// already get Bootstrap's default hover via .btn, so left untouched.
+.course-item {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: variables.$box-shadow-xs-2;
+    }
+}
+.table {
+    tbody tr {
+        transition: background-color 0.2s ease;
+        &:hover {
+            background-color: variables.$light-500;
+        }
+    }
+}
+.settings-sidebar {
+    ul li a {
+        transition: background-color 0.2s ease, color 0.2s ease;
+        &:hover {
+            background-color: variables.$light-500;
+        }
+    }
+}
+.chat-member {
+    &:hover {
+        background-color: variables.$light-500;
+    }
+}
+
+// #20.1 — Bluverse badge gradient. Applied as an opt-in class rather than
+// restyling every .badge, so semantic status badges (passed/failed, stock
+// state, ticket priority) keep their own meaningful colours.
+.bv-badge {
+    background: variables.$bv-badge-gradient;
+    color: variables.$white;
+    border: 0;
+    &:hover,
+    &:focus-visible {
+        color: variables.$white;
+    }
+}
+
+// #33 — LMS Guide entry above the curriculum. Styled as a plain surface so it
+// reads as a section header, not one of the lesson rows beneath it.
+.lms-guide-card {
+    background: transparent;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    &:hover {
+        background-color: variables.$light-500;
+    }
+}
+
+// #36 — founder card gets a subtle lift on desktop hover, matching the
+// offering cards. Skipped for reduced-motion users via the shared rule below.
+.founder-card {
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+    @media (hover: hover) and (min-width: 992px) {
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: variables.$box-shadow-xs-2;
+        }
+    }
+}
+
+// #10 / #46 — small uppercase section eyebrow above a section heading.
+.bv-eyebrow {
+    letter-spacing: 1.5px;
+    font-size: 14px;
+}
+
+// #46 — offering cards on About Us. Spec: translateY lift, stronger shadow,
+// accent border and a subtle image zoom over 300-400ms. Deliberately restrained
+// ("do not use flashy or distracting effects"), and skipped entirely for users
+// who ask for reduced motion.
+.offering-card {
+    border: 1px solid transparent !important;
+    transition: transform 0.35s ease, box-shadow 0.35s ease,
+        border-color 0.35s ease;
+
+    &__media img {
+        transition: transform 0.35s ease;
+    }
+
+    &:hover {
+        transform: translateY(-6px);
+        box-shadow: variables.$box-shadow-xs-2;
+        border-color: variables.$primary !important;
+
+        .offering-card__media img {
+            transform: scale(1.06);
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .offering-card,
+    .offering-card__media img,
+    .founder-card {
+        transition: none;
+    }
+    .offering-card:hover,
+    .founder-card:hover {
+        transform: none;
+        .offering-card__media img { transform: none; }
+    }
+}

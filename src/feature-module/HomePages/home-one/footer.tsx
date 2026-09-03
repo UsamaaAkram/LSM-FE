@@ -1,9 +1,69 @@
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
+import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 
 const Footer = () => {
   return (
     <footer className="footer footer-one">
+      <div className="footer-top py-5">
+        <div className="container">
+          <div className="row row-gap-4">
+            <div className="col-lg-4">
+              <Link to={all_routes.homeone} className="d-inline-block mb-3">
+                <ImageWithBasePath
+                  src="assets/img/newLogo.PNG"
+                  alt="Bluverse Digital Hub"
+                  style={{ height: 48, width: "auto" }}
+                />
+              </Link>
+              <p className="mb-0">
+                Pakistan&rsquo;s leading institute of content creation &amp;
+                digital skills — helping creators master modern skills, build
+                digital careers, and turn their potential into profit.
+              </p>
+            </div>
+            <div className="col-lg-4 col-md-6">
+              <h5 className="mb-3">Quick Links</h5>
+              <ul className="list-unstyled footer-quick-links">
+                <li className="mb-2">
+                  <Link to={all_routes.homeone}>Home</Link>
+                </li>
+                <li className="mb-2">
+                  <Link to={all_routes.courseGrid}>Courses</Link>
+                </li>
+                <li className="mb-2">
+                  <Link to={all_routes.services}>Services</Link>
+                </li>
+                <li className="mb-2">
+                  <Link to={all_routes.about_us}>About Us</Link>
+                </li>
+                <li className="mb-2">
+                  <Link to={all_routes.contactUs}>Contact Us</Link>
+                </li>
+              </ul>
+            </div>
+            <div className="col-lg-4 col-md-6">
+              <h5 className="mb-3">Contact</h5>
+              <ul className="list-unstyled footer-quick-links">
+                <li className="mb-2">
+                  <a href="mailto:bluversedigitalhub@gmail.com">
+                    bluversedigitalhub@gmail.com
+                  </a>
+                </li>
+                <li className="mb-2">
+                  <a
+                    href="https://wa.me/message/WBFSRFPHA72OI1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    +92 313 4339915
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="footer-bottom bg-secondary py-4">
         <div className="container">
           <div className="row row-gap-2">

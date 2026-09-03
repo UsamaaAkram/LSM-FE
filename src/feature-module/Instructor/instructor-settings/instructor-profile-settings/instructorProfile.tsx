@@ -22,26 +22,24 @@ const validationSchema = Yup.object({
   userName: Yup.string().required("User name required"),
   phoneNumber: Yup.string().required("Phone number required"),
   bio: Yup.string().required("Bio required"),
-  education: Yup.array()
-    .of(
-      Yup.object({
-        degree: Yup.string().required("Degree required"),
-        university: Yup.string().required("Institute required"),
-        fromDate: Yup.mixed().required("From Date required"),
-        toDate: Yup.mixed().required("To Date required"),
-      })
-    )
-    .min(1, "At least one education record required"),
-  experience: Yup.array()
-    .of(
-      Yup.object({
-        company: Yup.string().required("Company required"),
-        position: Yup.string().required("Position required"),
-        fromDate: Yup.mixed().required("From Date required"),
-        toDate: Yup.mixed().required("To Date required"),
-      })
-    )
-    .min(1, "At least one experience record required"),
+  // Educational/experience details are optional (#4.3) — instructors may
+  // leave individual fields blank, or skip adding any record at all.
+  education: Yup.array().of(
+    Yup.object({
+      degree: Yup.string().notRequired(),
+      university: Yup.string().notRequired(),
+      fromDate: Yup.mixed().notRequired(),
+      toDate: Yup.mixed().notRequired(),
+    })
+  ),
+  experience: Yup.array().of(
+    Yup.object({
+      company: Yup.string().notRequired(),
+      position: Yup.string().notRequired(),
+      fromDate: Yup.mixed().notRequired(),
+      toDate: Yup.mixed().notRequired(),
+    })
+  ),
 });
 
 const InstructorProfileSettings = () => {
@@ -370,10 +368,7 @@ const InstructorProfileSettings = () => {
                                               <div className="col-md-6">
                                                 <div className="mb-3">
                                                   <label className="form-label">
-                                                    Degree{" "}
-                                                    <span className="text-danger">
-                                                      *
-                                                    </span>
+                                                    Degree
                                                   </label>
                                                   <Field
                                                     name={`education.${idx}.degree`}
@@ -389,10 +384,7 @@ const InstructorProfileSettings = () => {
                                               <div className="col-md-6">
                                                 <div className="mb-3">
                                                   <label className="form-label">
-                                                    Institute{" "}
-                                                    <span className="text-danger">
-                                                      *
-                                                    </span>
+                                                    Institute
                                                   </label>
                                                   <Field
                                                     name={`education.${idx}.university`}
@@ -412,10 +404,7 @@ const InstructorProfileSettings = () => {
                                               <div className="col-md-6">
                                                 <div className="mb-3">
                                                   <label className="form-label">
-                                                    From Date{" "}
-                                                    <span className="text-danger">
-                                                      *
-                                                    </span>
+                                                    From Date
                                                   </label>
                                                   <DatePicker
                                                     className="form-control datetimepicker"
@@ -445,10 +434,7 @@ const InstructorProfileSettings = () => {
                                               <div className="col-md-6">
                                                 <div className="mb-3">
                                                   <label className="form-label">
-                                                    To Date{" "}
-                                                    <span className="text-danger">
-                                                      *
-                                                    </span>
+                                                    To Date
                                                   </label>
                                                   <DatePicker
                                                     className="form-control datetimepicker"
@@ -478,7 +464,7 @@ const InstructorProfileSettings = () => {
                                             </div>
                                           </div>
                                           <div className="col-12 mb-2">
-                                            {values.education.length > 1 && (
+                                            {values.education.length > 0 && (
                                               <button
                                                 type="button"
                                                 className="btn  text-danger"
@@ -529,10 +515,7 @@ const InstructorProfileSettings = () => {
                                               <div className="col-md-6">
                                                 <div className="mb-3">
                                                   <label className="form-label">
-                                                    Company{" "}
-                                                    <span className="text-danger">
-                                                      *
-                                                    </span>
+                                                    Company
                                                   </label>
                                                   <Field
                                                     name={`experience.${idx}.company`}
@@ -548,10 +531,7 @@ const InstructorProfileSettings = () => {
                                               <div className="col-md-6">
                                                 <div className="mb-3">
                                                   <label className="form-label">
-                                                    Position{" "}
-                                                    <span className="text-danger">
-                                                      *
-                                                    </span>
+                                                    Position
                                                   </label>
                                                   <Field
                                                     name={`experience.${idx}.position`}
@@ -571,10 +551,7 @@ const InstructorProfileSettings = () => {
                                               <div className="col-md-6">
                                                 <div className="mb-3">
                                                   <label className="form-label">
-                                                    From Date{" "}
-                                                    <span className="text-danger">
-                                                      *
-                                                    </span>
+                                                    From Date
                                                   </label>
                                                   <DatePicker
                                                     className="form-control datetimepicker"
@@ -604,10 +581,7 @@ const InstructorProfileSettings = () => {
                                               <div className="col-md-6">
                                                 <div className="mb-3">
                                                   <label className="form-label">
-                                                    To Date{" "}
-                                                    <span className="text-danger">
-                                                      *
-                                                    </span>
+                                                    To Date
                                                   </label>
                                                   <DatePicker
                                                     className="form-control datetimepicker"
@@ -637,7 +611,7 @@ const InstructorProfileSettings = () => {
                                             </div>
                                           </div>
                                           <div className="col-12 mb-2">
-                                            {values.experience.length > 1 && (
+                                            {values.experience.length > 0 && (
                                               <button
                                                 type="button"
                                                 className="btn  text-danger"

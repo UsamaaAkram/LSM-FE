@@ -506,18 +506,21 @@ import {
 const guardianRelationOptions = ["Father", "Mother", "Other"];
 
 // ------ Validation Schema ------
+// Most profile fields are optional (#10) — Username and Email are read-only
+// in the UI below (editable values there caused login/identity issues), so
+// they keep format validation but nothing else is required anymore.
 const validationSchema = Yup.object({
-  firstName: Yup.string().required("First name required"),
-  lastName: Yup.string().required("Last name required"),
-  userName: Yup.string().required("User name required"),
-  email: Yup.string().required("Email required").email("Invalid email"),
-  phoneNumber: Yup.string().required("Phone number required"),
-  address: Yup.string().required("Address required"),
-  gender: Yup.object().nullable().required("Gender required"),
-  cnic: Yup.string().required("CNIC required"),
-  dob: Yup.mixed().required("Date of birth required"),
+  firstName: Yup.string(),
+  lastName: Yup.string(),
+  userName: Yup.string(),
+  email: Yup.string().email("Invalid email"),
+  phoneNumber: Yup.string(),
+  address: Yup.string(),
+  gender: Yup.object().nullable(),
+  cnic: Yup.string(),
+  dob: Yup.mixed(),
   age: Yup.number().nullable().min(0, "Age must be positive"),
-  bio: Yup.string().required("Bio required"),
+  bio: Yup.string(),
   isGuardian: Yup.boolean(),
   guardian_relation: Yup.string().when("isGuardian", {
     is: (val: boolean) => val === true,
@@ -773,7 +776,6 @@ const StudentSettings = () => {
                               <div className="mb-3">
                                 <label className="form-label">
                                   First Name
-                                  <span className="text-danger"> *</span>
                                 </label>
                                 <Field
                                   type="text"
@@ -791,7 +793,6 @@ const StudentSettings = () => {
                               <div className="mb-3">
                                 <label className="form-label">
                                   Last Name
-                                  <span className="text-danger"> *</span>
                                 </label>
                                 <Field
                                   type="text"
@@ -809,7 +810,7 @@ const StudentSettings = () => {
                               <div className="mb-3">
                                 <label className="form-label">
                                   User Name{" "}
-                                  <span className="text-danger"> *</span>
+                                  <small className="text-muted">(read-only)</small>
                                 </label>
                                 <Field
                                   type="text"
@@ -827,7 +828,8 @@ const StudentSettings = () => {
                             <div className="col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Email <span className="text-danger"> *</span>
+                                  Email{" "}
+                                  <small className="text-muted">(read-only)</small>
                                 </label>
                                 <Field
                                   type="email"
@@ -845,8 +847,7 @@ const StudentSettings = () => {
                             <div className="col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Phone Number{" "}
-                                  <span className="text-danger"> *</span>
+                                  Phone Number
                                 </label>
                                 <Field
                                   type="text"
@@ -863,8 +864,7 @@ const StudentSettings = () => {
                             <div className="col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Address{" "}
-                                  <span className="text-danger"> *</span>
+                                  Address
                                 </label>
                                 <Field
                                   type="text"
@@ -881,7 +881,7 @@ const StudentSettings = () => {
                             <div className="col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Gender <span className="text-danger"> *</span>
+                                  Gender
                                 </label>
                                 <CustomSelect
                                   options={Gender}
@@ -902,7 +902,7 @@ const StudentSettings = () => {
                             <div className="col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  CNIC <span className="text-danger"> *</span>
+                                  CNIC
                                 </label>
                                 <Field
                                   type="text"
@@ -919,7 +919,7 @@ const StudentSettings = () => {
                             <div className="col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  DOB <span className="text-danger"> *</span>
+                                  DOB
                                 </label>
                                 <div className="input-icon-end position-relative">
                                   <DatePicker
@@ -947,7 +947,7 @@ const StudentSettings = () => {
                             <div className="col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Age <span className="text-danger"> *</span>
+                                  Age
                                 </label>
                                 <Field
                                   type="number"
@@ -964,7 +964,7 @@ const StudentSettings = () => {
                             <div className="col-md-12">
                               <div className="mb-3">
                                 <label className="form-label">
-                                  Bio <span className="text-danger"> *</span>
+                                  Bio
                                 </label>
                                 <Field
                                   as="textarea"

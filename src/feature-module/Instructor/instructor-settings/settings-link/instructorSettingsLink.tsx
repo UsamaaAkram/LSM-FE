@@ -17,9 +17,7 @@ const InstructorSettingsLink = () => {
         <li>
           <Link to={route.instructorChangePassword} className={`${location.pathname === '/instructor/instructor-change-password' ? 'active' : ''}`}>Security</Link>
         </li>
-        <li>
-          <Link to={route.instructorPlan} className={`${location.pathname === '/instructor/instructor-plans' ? 'active' : ''}`}>Plans</Link>
-        </li>
+        {/* Plans/Receipts moved out of Settings into its own sidebar item (#14) */}
         {/* <li>
           <Link to={route.instructorSocialProfiles} className={`${location.pathname === '/instructor/instructor-social-profiles' ? 'active' : ''}`}>Social Profiles</Link>
         </li>

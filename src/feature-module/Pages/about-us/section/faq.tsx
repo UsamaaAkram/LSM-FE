@@ -4,6 +4,10 @@ const Faq = () => {
   return (
     <>
       {/* faq */}
+      <style>{`
+        .faq-chevron { transition: transform 0.2s ease; }
+        .accordion-button:not(.collapsed) .faq-chevron { transform: rotate(180deg); }
+      `}</style>
       <section className="faq-section">
         <div className="container">
           <div className="row align-items-center">
@@ -35,7 +39,7 @@ const Faq = () => {
                         aria-controls="collapsecustomicon1One"
                       >
                         Who is M. Bilal and why should I learn from him?{" "}
-                        <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                        <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                       </Link>
                     </h2>
                     <div
@@ -73,7 +77,7 @@ const Faq = () => {
                         aria-controls="collapsecustomicon1Two"
                       >
                         What will I learn in this mentorship program?{" "}
-                        <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                        <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                       </Link>
                     </h2>
                     <div
@@ -117,7 +121,7 @@ const Faq = () => {
                         aria-controls="collapsecustomicon1Three"
                       >
                         Do I need any prior experience or equipment?{" "}
-                        <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                        <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                       </Link>
                     </h2>
                     <div
@@ -158,7 +162,7 @@ const Faq = () => {
                       >
                         How long does it take to start earning from content
                         creation?{" "}
-                        <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                        <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                       </Link>
                     </h2>
                     <div
@@ -199,7 +203,7 @@ const Faq = () => {
                         aria-controls="collapsecustomicon1Five"
                       >
                         What support do I get after joining?{" "}
-                        <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                        <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                       </Link>
                     </h2>
                     <div

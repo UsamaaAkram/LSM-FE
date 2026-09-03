@@ -3,12 +3,36 @@
 
 .login-content {
 	.login-bg {
-		background: #E6FFFF;
+		// Premium Enterprise redesign (#4.1): gradient replaces the flat
+		// fill, with soft glow shapes standing in for a literal skyline
+		// illustration (no such asset exists in this codebase, and a
+		// hand-drawn one can't be visually verified here).
+		background: linear-gradient(135deg, #0B4CC2 0%, #1D4ED8 35%, #3B82F6 65%, #93C5FD 100%);
 		min-height: 100vh;
 		position: fixed;
 		display: flex;
 		align-items: center;
 		width: 50%;
+		overflow: hidden;
+		&::before, &::after {
+			content: "";
+			position: absolute;
+			border-radius: 50%;
+			background: rgba(255, 255, 255, 0.08);
+			pointer-events: none;
+		}
+		&::before {
+			width: 380px;
+			height: 380px;
+			top: -120px;
+			right: -120px;
+		}
+		&::after {
+			width: 260px;
+			height: 260px;
+			bottom: -80px;
+			left: -80px;
+		}
 	}
 	.login-banner {
 		max-width: 100%;
@@ -40,9 +64,21 @@
 				text-align: center;
 				margin: auto;
 			}
+			// Dark gradient background above needs light text (#4.1).
+			h3 {
+				color: variables.$white;
+			}
+			.login-divider {
+				width: 48px;
+				height: 3px;
+				background: rgba(255, 255, 255, 0.5);
+				margin: 12px auto;
+				border-radius: 2px;
+			}
 		}
 		p {
 			font-size: variables.$font-size-14;
+			color: rgba(255, 255, 255, 0.85);
 		}
 	}
 	.slick-dots {

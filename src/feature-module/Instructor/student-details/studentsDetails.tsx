@@ -89,14 +89,14 @@ const StudentsDetails = () => {
     address: Yup.string(),
     gender: Yup.string(),
     dob: Yup.string(),
-    enrolledCourses: Yup.array()
-      .of(Yup.string())
-      .min(1, "Select at least one course!")
-      .required("Select at least one course!"),
+    // Activation no longer requires enrollment, and Student Type/Shift are
+    // optional too (#4.6) — admins can activate an account before assigning
+    // any coursework.
+    enrolledCourses: Yup.array().of(Yup.string()),
     batch: Yup.string(),
     enrolledBranch: Yup.string(),
-    studentType: Yup.string().required("Student type is required"),
-    shift: Yup.string().required("Shift is required"),
+    studentType: Yup.string(),
+    shift: Yup.string(),
     guardian_relation: Yup.string().when("isGuardian", {
       is: (val: boolean) => val === true,
       then: (schema) => schema.required("Guardian relation is required"),
@@ -422,7 +422,7 @@ const StudentsDetails = () => {
                           )}
                         </div>
                         <div className="col-md-3 mb-3">
-                          <label className="form-label">Student Type *</label>
+                          <label className="form-label">Student Type</label>
                           <Field
                             as="select"
                             name="studentType"
@@ -442,7 +442,7 @@ const StudentsDetails = () => {
                           )}
                         </div>
                         <div className="col-md-3 mb-3">
-                          <label className="form-label">Shift *</label>
+                          <label className="form-label">Shift</label>
                           <Field
                             as="select"
                             name="shift"
@@ -495,7 +495,7 @@ const StudentsDetails = () => {
                       <div className="row mb-2">
                         <div className="col-md-12 mb-3">
                           <label className="form-label">
-                            Enrolled Courses *
+                            Enrolled Courses
                           </label>
                           <Select
                             mode="multiple"

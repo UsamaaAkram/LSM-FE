@@ -219,6 +219,7 @@ const Register: React.FC = () => {
                         Digital Hub
                       </span>
                     </h3>
+                    <div className="login-divider" />
                     <p>Learn. Earn. Dominate.</p>
                   </div>
                 </div>

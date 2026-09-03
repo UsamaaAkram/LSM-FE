@@ -1083,10 +1083,58 @@
     color: inherit;
     z-index: 1;
     overflow: hidden;
-    background: linear-gradient(10.93deg, #392C7D 16.22%, #6850E3 120.13%);
+    // Dashboard hero banner gradient (Student/Instructor/Admin/Super Admin
+    // ProfileCard all share this class) — updated per the new "wave" gradient
+    // color stops used elsewhere in the redesign. Dark end kept on the left
+    // (under the white name/avatar text) so the light end of the wave only
+    // sweeps in from the right, matching "right-side wave" without breaking
+    // text contrast.
+    background: variables.$bv-wave-gradient;
     padding: 50px 35px;
+    // #20.3 — larger radius + premium soft shadow on the hero banner.
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(11, 76, 194, 0.18);
     @include mixins.respond-below(md){
         padding: 30px 20px;
+        border-radius: 12px;
+    }
+    // #20.3 decorative elements: three translucent white circles plus a dot
+    // pattern in the lower right. Drawn with gradients rather than images so
+    // they cost nothing to load, and kept at the doc's low opacities so they
+    // never compete with the name/avatar text. pointer-events:none so the
+    // layer can't intercept clicks on the content above it.
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        border-radius: inherit;
+        background-image:
+            // large circle (8%), medium (10%), small (12%)
+            radial-gradient(circle at 78% 18%, rgba(255,255,255,0.08) 0 120px, transparent 121px),
+            radial-gradient(circle at 92% 68%, rgba(255,255,255,0.10) 0 74px, transparent 75px),
+            radial-gradient(circle at 64% 88%, rgba(255,255,255,0.12) 0 40px, transparent 41px),
+            // dot pattern, lower right
+            radial-gradient(rgba(255,255,255,0.55) 1.2px, transparent 1.3px);
+        background-size: auto, auto, auto, 14px 14px;
+        background-position: 0 0, 0 0, 0 0, right 24px bottom 20px;
+        background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+        // Confine the repeating dot grid to a patch in the corner instead of
+        // tiling the whole banner.
+        -webkit-mask-image:
+            linear-gradient(#000, #000),
+            radial-gradient(circle at 88% 82%, #000 0 90px, transparent 91px);
+        -webkit-mask-composite: source-over;
+        mask-image:
+            linear-gradient(#000, #000),
+            radial-gradient(circle at 88% 82%, #000 0 90px, transparent 91px);
+    }
+    @include mixins.respond-below(md){
+        // Scale the decoration down on phones so it stays subtle (#20.3).
+        &::before {
+            background-size: auto, auto, auto, 11px 11px;
+        }
     }
     &::after {
         content: "";

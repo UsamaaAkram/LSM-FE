@@ -5,6 +5,17 @@ import { useSelector } from "react-redux";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const VDO_SCRIPT = "https://player.vdocipher.com/v2/api.js";
 
+// #25.3 / #25.4 — the control bar, the quality menu and its labels are drawn
+// by VdoCipher INSIDE the iframe, which is cross-origin: no CSS or JS of ours
+// can reach them. The supported route is a saved Player theme in the VdoCipher
+// dashboard (Config -> Players), where the control set is chosen and quality is
+// switched from bitrate values to resolution labels (360p / 720p HD / 1080p
+// Full HD). That theme is then selected per-embed by its id.
+//
+// Set VITE_VDOCIPHER_PLAYER_ID to that theme's id. Left unset, VdoCipher falls
+// back to the account default player, so this stays safe if it is missing.
+const VDO_PLAYER_ID = import.meta.env.VITE_VDOCIPHER_PLAYER_ID || "";
+
 type Segment = { start: number; end: number };
 
 // Loads the VdoCipher player SDK once, then resolves.
@@ -243,7 +254,12 @@ const VdoPlayer = ({
       <iframe
         ref={iframeRef}
         title="course-video"
-        src={`https://player.vdocipher.com/v2/?otp=${embed.otp}&playbackInfo=${embed.playbackInfo}`}
+        src={
+          `https://player.vdocipher.com/v2/?otp=${encodeURIComponent(
+            embed.otp
+          )}&playbackInfo=${encodeURIComponent(embed.playbackInfo)}` +
+          (VDO_PLAYER_ID ? `&player=${encodeURIComponent(VDO_PLAYER_ID)}` : "")
+        }
         style={{
           position: "absolute",
           top: 0,

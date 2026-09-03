@@ -10,7 +10,6 @@ import type { OptionType } from "../../../../core/common/commonSelect";
 import CustomSelect from "../../../../core/common/commonSelect";
 import InstructorSidebar from "../../common/instructorSidebar";
 import ProfileCard from "../../common/profileCard";
-import InstructorSettingsLink from "../settings-link/instructorSettingsLink";
 
 import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
 import type { CatalogItem, Invoice } from "../../../../core/redux/invoiceSlice";
@@ -698,7 +697,7 @@ const InstructorPlanSettings = () => {
 
   return (
     <>
-      <Breadcrumb title="Settings" />
+      <Breadcrumb title="Receipts" />
 
       <div className="content">
         <div className="container">
@@ -707,9 +706,8 @@ const InstructorPlanSettings = () => {
             <InstructorSidebar />
             <div className="col-lg-9">
               <div className="mb-3">
-                <h5>Settings</h5>
+                <h5>Receipts</h5>
               </div>
-              <InstructorSettingsLink />
 
               {/* ═══════ INVOICE SECTION (gated by receipt permission) ═══════ */}
               {!canManageReceipts ? (
@@ -863,12 +861,13 @@ const InstructorPlanSettings = () => {
                     <thead className="thead-light">
                       <tr>
                         <th>#</th>
-                        <th>Customer</th>
+                        <th>Student</th>
                         <th>Type</th>
                         <th>Payment Method</th>
                         <th>Enrollment Date</th>
                         <th>Amount</th>
                         <th>Status</th>
+                        {activeTab === "deleted" && <th>Deleted By</th>}
                         <th />
                       </tr>
                     </thead>
@@ -914,6 +913,25 @@ const InstructorPlanSettings = () => {
                               : "—"}
                           </td>
                           <td>{getStatusBadge(inv.paymentStatus)}</td>
+                          {activeTab === "deleted" && (
+                            <td>
+                              <div>
+                                <span className="d-block">
+                                  {inv.deletedBy || "—"}
+                                </span>
+                                <small className="text-muted">
+                                  {inv.deletedByRole
+                                    ? `${inv.deletedByRole} · `
+                                    : ""}
+                                  {inv.deletedAt
+                                    ? moment(inv.deletedAt).format(
+                                        "DD MMM YYYY, hh:mm A"
+                                      )
+                                    : ""}
+                                </small>
+                              </div>
+                            </td>
+                          )}
                           <td>
                             <div className="d-flex align-items-center gap-2">
                               {/* View Invoice */}
@@ -993,7 +1011,7 @@ const InstructorPlanSettings = () => {
                 <div className="col-md-6">
                   <div className="mb-3">
                     <label className="form-label">
-                      Customer Name <span className="text-danger">*</span>
+                      Student Name <span className="text-danger">*</span>
                     </label>
                     <input
                       type="text"
@@ -1008,7 +1026,7 @@ const InstructorPlanSettings = () => {
                 <div className="col-md-6">
                   <div className="mb-3">
                     <label className="form-label">
-                      Customer Email <span className="text-danger">*</span>
+                      Student Email <span className="text-danger">*</span>
                     </label>
                     <input
                       type="email"

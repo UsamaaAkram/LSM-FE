@@ -5,6 +5,10 @@ const Faq = () => {
   return (
     <>
     {/* faq */}
+    <style>{`
+      .faq-chevron { transition: transform 0.2s ease; }
+      .accordion-button:not(.collapsed) .faq-chevron { transform: rotate(180deg); }
+    `}</style>
     <div className="faq-section faq-banner-bg">
       <ImageWithBasePath
         src="assets/img/bg/bg-21.svg"
@@ -57,7 +61,7 @@ const Faq = () => {
                       aria-controls="collapsecustomicon1One"
                     >
                       How do I enroll in a course?{" "}
-                      <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                      <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                     </Link>
                   </h2>
                   <div
@@ -90,7 +94,7 @@ const Faq = () => {
                       aria-controls="collapsecustomicon1One"
                     >
                       How long do I have access to a course?{" "}
-                      <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                      <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                     </Link>
                   </h2>
                   <div
@@ -123,7 +127,7 @@ const Faq = () => {
                       aria-controls="collapsecustomicon1One"
                     >
                       What payment methods are accepted?{" "}
-                      <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                      <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                     </Link>
                   </h2>
                   <div
@@ -156,7 +160,7 @@ const Faq = () => {
                       aria-controls="collapsecustomicon1One"
                     >
                       Will I receive a certificate after completing a course?{" "}
-                      <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                      <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                     </Link>
                   </h2>
                   <div
@@ -189,7 +193,7 @@ const Faq = () => {
                       aria-controls="collapsecustomicon1One"
                     >
                       What is the purpose of this BluverseLMS ?{" "}
-                      <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                      <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                     </Link>
                   </h2>
                   <div
@@ -222,7 +226,7 @@ const Faq = () => {
                       aria-controls="collapsecustomicon1One"
                     >
                       What can I do with my certificate?{" "}
-                      <i className="isax isax-add fs-20 fw-semibold ms-1" />
+                      <i className="isax isax-arrow-down-1 fs-16 fw-semibold ms-1 faq-chevron" />
                     </Link>
                   </h2>
                   <div

@@ -33,11 +33,14 @@ export const PrivateCourse = [
 export const CourseVideo = [
   { label: 'External URL', value: 'External URL' },
 ];
+// Support ticket categories (#12) — replaced generic template categories
+// (Mailing/Language/Installation) that didn't match what students
+// actually contact support about.
 export const Category = [
   {label: 'All', value: '' },
-  { label: 'Mailing Issues', value: 'Mailing Issues' },
-  { label: 'Language Issues', value: 'Language Issues' },
-  { label: 'Installation Error', value: 'Installation Error' },
+  { label: 'Login Issue', value: 'Login Issue' },
+  { label: 'Technical Issue', value: 'Technical Issue' },
+  { label: 'Other Issue', value: 'Other Issue' },
 ];
 export const Priority = [
   {label: 'All', value: '' },

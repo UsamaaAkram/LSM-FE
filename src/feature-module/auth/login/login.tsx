@@ -51,13 +51,20 @@ const Login = () => {
   );
   const [removingId, setRemovingId] = useState<string | null>(null);
 
+  // Single role+approval-aware redirect rule (#1+#13), used for every login.
+  // isDisable lives at user.student.isDisable for students (nested schema)
+  // but at the top level for instructor/admin — the old ternary only ever
+  // checked the top-level field, so a pending/disabled student was silently
+  // sent straight to their dashboard instead of the approval screen.
   const goToDashboard = (user: any) => {
+    const isPending =
+      user?.role === "student" ? user?.student?.isDisable : user?.isDisable;
+    if (isPending === true) {
+      window.location.pathname = route.approvalScreen;
+      return;
+    }
     window.location.pathname =
-      user?.role === "instructor"
-        ? user?.isDisable === true
-          ? route.approvalScreen
-          : route.instructorDashboard
-        : user?.role === "admin"
+      user?.role === "instructor" || user?.role === "admin"
         ? route.instructorDashboard
         : route.studentDashboard;
   };
@@ -140,6 +147,7 @@ const Login = () => {
                         Digital Hub
                       </span>
                     </h3>
+                    <div className="login-divider" />
                     <p>Learn. Earn. Dominate.</p>
                   </div>
                 </div>

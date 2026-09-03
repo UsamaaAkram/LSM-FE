@@ -357,6 +357,44 @@ $maroon-gradient: linear-gradient(180deg, #EF3B4A 0%, #513A8F 100%);
 $purple-gradient2: linear-gradient(10.93deg, #392C7D 16.22%, #6850E3 120.13%);
 $blue-gradient2: linear-gradient(10.93deg, #2C7A9C 16.22%, #0936CB 120.13%);
 
+// ---- Bluverse brand gradients (#20) ----------------------------------------
+// Exact stops from the requirements doc, defined once so badges, hero banners
+// and the wave background can never drift apart.
+$bv-blue-900: #0B4CC2;
+$bv-blue-800: #1D4ED8;
+$bv-blue-700: #2563EB;
+$bv-blue-500: #3B82F6;
+$bv-blue-400: #1D9BF0;
+$bv-blue-300: #93C5FD;
+$bv-blue-100: #DBEAFE;
+$bv-cyan:     #22D3EE;
+
+// Badges — doc: linear-gradient(90deg, #2563EB 0%, #22D3EE 100%)
+$bv-badge-gradient: linear-gradient(90deg, $bv-blue-700 0%, $bv-cyan 100%);
+
+// Dashboard hero banners (student / instructor / admin / super admin)
+$bv-hero-gradient: linear-gradient(
+    90deg,
+    $bv-blue-800 0%,
+    $bv-blue-700 28%,
+    $bv-blue-500 55%,
+    $bv-blue-400 78%,
+    $bv-cyan 100%
+);
+
+// Right-side wave. The doc lists the stops light-to-dark; the order is reversed
+// here so the DARK end sits under the white banner text and only the light end
+// sweeps in from the outer edge — same palette, readable contrast.
+$bv-wave-gradient: linear-gradient(
+    100deg,
+    $bv-blue-900 0%,
+    $bv-blue-800 45%,
+    $bv-blue-500 70%,
+    $bv-blue-300 88%,
+    $bv-blue-100 96%,
+    #FFFFFF 100%
+);
+
 // Style Anchor Elements
 $link-color: $primary;
 $link-decoration: none;

@@ -27,3 +27,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Pristine client-supplied artwork (Drive originals, ~70MB). Kept locally so the
+# web assets can be regenerated, but never committed — Drive is the archive.
+# NOTE: deliberately OUTSIDE public/ — Vite copies public/ verbatim into the
+# build, so originals left there would ship 70MB to production.
+# See public/assets/img/bluverse/README.md
+design-assets/
