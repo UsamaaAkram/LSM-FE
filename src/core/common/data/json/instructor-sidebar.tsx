@@ -1,4 +1,4 @@
-import { all_routes } from "../../../../feature-module/router/all_routes";
+﻿import { all_routes } from "../../../../feature-module/router/all_routes";
 
 export const instructorSidebarData = [
     {
@@ -25,6 +25,11 @@ export const instructorSidebarData = [
         title:'Assignments',
         icon:'isax isax-clipboard-text5',
         route: all_routes.instructorAssignment
+    },
+    {
+        title:'Shop',
+        icon:'isax isax-shop',
+        route: all_routes.instructorShop
     },
     {
         title:'Students',

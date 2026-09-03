@@ -1,4 +1,4 @@
-import { Navigate, Route } from "react-router";
+﻿import { Navigate, Route } from "react-router";
 import ComingSoon from "../auth/coming-soon/comingSoon";
 import Error404 from "../auth/error/error-404/error400";
 import Error500 from "../auth/error/error-500/error500";
@@ -45,6 +45,7 @@ import InstructorIntegrations from "../Instructor/instructor-settings/instructor
 import InstructorLinkedAccounts from "../Instructor/instructor-settings/instructor-linked-accounts/instructorLinkedAccounts";
 import InstructorNotification from "../Instructor/instructor-settings/instructor-notification/instructorNotification";
 import InstructorPlanSettings from "../Instructor/instructor-settings/instructor-plans-settings/instructorPlanSettings";
+import InstructorShop from "../Instructor/instructor-shop/instructorShop";
 import InstructorSocialprofileSettings from "../Instructor/instructor-settings/instructor-socialprofile-settings/instructorSocialprofileSettings";
 import InstructorWithdraw from "../Instructor/instructor-settings/instructor-withdraw/instructorWithdraw";
 import InstructorStatement from "../Instructor/instructor-statement/instructorStatement";
@@ -392,6 +393,11 @@ export const protectedRoutes = [
   {
     path: routes.instructorChangePassword,
     element: <InstructorChangePassoword />,
+    route: Route,
+  },
+  {
+    path: routes.instructorShop,
+    element: <InstructorShop />,
     route: Route,
   },
   {

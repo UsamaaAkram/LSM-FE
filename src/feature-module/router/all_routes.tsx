@@ -1,4 +1,4 @@
-export const all_routes = {
+﻿export const all_routes = {
   //Home Modules
   homeone: "/index",
   hometwo: "/index-2",
@@ -52,6 +52,7 @@ export const all_routes = {
   instructorReferral: "/instructor/instructor-withdraw",
   instructorQA: "/instructor/instructor-quiz-questions",
   instructorsettings: "/instructor/instructor-settings",
+  instructorShop: "/instructor/instructor-shop",
   approvalScreen: "/instructor/approval-screen",
   allInstructorList: "/instructor/instructor-list",
 

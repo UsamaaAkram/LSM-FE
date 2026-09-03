@@ -1,4 +1,4 @@
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
+﻿import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import sidebarReducer from "./sidebarSlice";
 import themeSettingReducer from "./themeSettingSlice";
 import authReducer from "./authSlice";
@@ -13,6 +13,8 @@ import userReducer from "./chatUserSlice";
 import studentCoursesReducer from "./studentCoursesSlice";
 import studentWishlistReducer from "./studentWishlistSlice";
 import studentSubmissionReducer from './studentSubmissionSlice';
+import productReducer from './productSlice';
+import orderReducer from './orderSlice';
 import studentLessonWatchedReducer from './studentLessonWatchedSlice';
 import studentDashboardSlice from "./studentDashboardSlice";
 import studentCertificatesSlice from "./studentCertificatesSlice";
@@ -45,6 +47,8 @@ const rootReducer = combineReducers({
   studentCourses: studentCoursesReducer,
   studentWishlist: studentWishlistReducer,
   studentSubmission: studentSubmissionReducer,
+  product: productReducer,
+  order: orderReducer,
   lessonWatched: studentLessonWatchedReducer,
   studentDashboard: studentDashboardSlice, // Add the studentDashboard slice here
   studentCertificates: studentCertificatesSlice, // Add the studentCertificates slice here
