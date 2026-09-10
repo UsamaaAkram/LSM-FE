@@ -1,4 +1,4 @@
-﻿import { all_routes } from "../../../../feature-module/router/all_routes";
+import { all_routes } from "../../../../feature-module/router/all_routes";
 
 export const instructorSidebarData = [
     {
@@ -16,20 +16,37 @@ export const instructorSidebarData = [
         icon:'isax isax-teacher5',
         route: all_routes.instructorCourse
     },
-    // {
-    //     title:'Announcements',
-    //     icon:'isax isax-volume-high5',
-    //     route: all_routes.instructorAnnouncements
-    // },
+    // Now a real page: it manages the isAnnouncement chat channel (publish,
+    // edit, delete, pin), so the link is no longer misleading.
+    {
+        title:'Announcements',
+        icon:'isax isax-volume-high5',
+        route: all_routes.instructorAnnouncements
+    },
     {
         title:'Assignments',
         icon:'isax isax-clipboard-text5',
         route: all_routes.instructorAssignment
     },
     {
+        title:'Success Stories',
+        icon:'isax isax-star5',
+        route: all_routes.instructorSuccessStories
+    },
+    {
         title:'Shop',
         icon:'isax isax-shop',
         route: all_routes.instructorShop
+    },
+    {
+        title:'Shop Orders',
+        icon:'isax isax-receipt-item',
+        route: all_routes.instructorShopOrders
+    },
+    {
+        title:'Enrollments',
+        icon:'isax isax-clipboard-tick',
+        route: all_routes.instructorEnrollments
     },
     {
         title:'Students',
@@ -83,6 +100,11 @@ export const instructorSidebarData = [
         icon:'isax isax-ticket5',
         route: all_routes.instructorTickets
     },
-    
-    
+    {
+        title:'Receipts',
+        icon:'isax isax-receipt',
+        route: all_routes.instructorPlan
+    },
+
+
 ]

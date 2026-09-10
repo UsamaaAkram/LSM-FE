@@ -7,6 +7,12 @@ export type Reply = {
   userName: string;
   message: string;
   date: string;
+  // #43 — who wrote it, so the thread can label each turn, plus a per-reply
+  // attachment separate from the ticket's original one.
+  name?: string;
+  role?: string;
+  photo?: string;
+  attachment?: any;
 };
 
 export type Ticket = {
@@ -160,31 +166,42 @@ export const fetchByUserTickets = createAsyncThunk(
 );
 
 // ADD REPLY (client: push reply, server: replace entire Replies arr!)
+// #43 — append one reply via the dedicated endpoint.
+//
+// This used to GET the ticket, append to the Replies array client-side, then
+// PUT the whole ticket back. Three problems, all fixed by posting a single
+// reply and letting the server $push it:
+//   1. Lost updates — two people replying at once each PUT an array built from
+//      a stale read, so the second write silently dropped the first reply.
+//   2. It re-sent Attachments through FormData, where an object stringifies to
+//      "[object Object]" — every reply corrupted the ticket's own attachment.
+//   3. It required resending Subject/Category/Priority/... just to add a reply.
 export const addReply = createAsyncThunk(
   "ticket/addReply",
-  async ({ ticketId, reply }: { ticketId: string; reply: Reply }, thunkAPI) => {
+  async (
+    {
+      ticketId,
+      reply,
+      attachment,
+    }: { ticketId: string; reply: Reply; attachment?: File | null },
+    thunkAPI
+  ) => {
     try {
-      // Fetch existing ticket first
-      const resGet = await axios.get(`${API_BASE}/${ticketId}`);
-      const currentTicket = resGet.data;
-      // update: replies array pushed from client and saved as new array
-      const updatedReplies = Array.isArray(currentTicket.Replies)
-        ? [...currentTicket.Replies, reply]
-        : [reply];
       const formData = new FormData();
-      // Add all other required fields for update to comply with backend
-      formData.append("Subject", currentTicket.Subject);
-      formData.append("Category", currentTicket.Category);
-      formData.append("Priority", currentTicket.Priority);
-      formData.append("Description", currentTicket.Description);
-      formData.append("Status", currentTicket.Status);
-      formData.append("Date", currentTicket.Date);
-      formData.append("Attachments", currentTicket.Attachments ?? '');
-      formData.append("Replies", JSON.stringify(updatedReplies));
+      formData.append("userID", reply.userID);
+      formData.append("email", reply.email);
+      formData.append("userName", reply.userName ?? "");
+      formData.append("name", reply.name ?? "");
+      formData.append("message", reply.message);
+      formData.append("role", reply.role ?? "");
+      formData.append("photo", reply.photo ?? "");
+      if (attachment) formData.append("attachment", attachment);
 
-      const res = await axios.put(`${API_BASE}/${ticketId}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await axios.post(
+        `${API_BASE}/${ticketId}/reply`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
       return res.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(

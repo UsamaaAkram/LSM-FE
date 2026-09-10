@@ -12,6 +12,7 @@ import ImageGlobal from "../../../core/common/ImageGlobal/ImageGlobal";
 import { deleteCourse, fetchCourses } from "../../../core/redux/courses";
 import { toast } from "react-toastify";
 import moment from "moment";
+import { courseUrl } from "../../../core/common/courseLink";
 
 const InstructorCourse = () => {
   const dispatch = useDispatch();
@@ -31,16 +32,10 @@ const InstructorCourse = () => {
     dispatch(fetchCourses({ status: filterStatus, search }) as any);
   }, [dispatch, filterStatus, search]);
 
+  // Course duration is now a free-text field (#2.4, no longer HH:mm:ss —
+  // that format capped courses at 24h), so it's shown as entered.
   function formatDuration(duration: string) {
-    const m = moment(duration, "HH:mm:ss");
-    const parts = [];
-    const hours = m.hours();
-    const mins = m.minutes();
-    const secs = m.seconds();
-    if (hours) parts.push(`${hours} hr`);
-    if (mins) parts.push(`${mins} min`);
-    if (secs) parts.push(`${secs} sec`);
-    return parts.join(" ");
+    return duration || "";
   }
 
   // Table columns
@@ -52,7 +47,7 @@ const InstructorCourse = () => {
         return (
           <div className="d-flex align-items-center">
             <Link
-              to={`${all_routes.courseDetails}?id=${record._id}`}
+              to={courseUrl(record)}
               className="avatar avatar-lg me-2 flex-shrink-0"
             >
               <ImageGlobal
@@ -64,7 +59,7 @@ const InstructorCourse = () => {
             </Link>
             <div>
               <h6 className="fw-medium mb-2">
-                <Link to={`${all_routes.courseDetails}?id=${record._id}`}>
+                <Link to={courseUrl(record)}>
                   {record.courseTitle}
                 </Link>
               </h6>

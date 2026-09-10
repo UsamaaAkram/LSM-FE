@@ -7,31 +7,40 @@ import ProtectedRoutes from "../privateRoute";
 import StudentRoute from "../studentRoute";
 import InstructorAdminRoute from "../instructorAdminRoute";
 import Error404 from "../auth/error/error-404/error400";
+import { all_routes as routes } from "./all_routes";
 
 const ALLRoutes: React.FC = () => {
+  // Which protected routes belong to students. Anything NOT listed here is
+  // treated as instructor/admin-only, so a missing entry silently locks
+  // students out of their own page.
+  //
+  // Derived from all_routes rather than hardcoded path strings: the literal
+  // list drifted every time a route was added or a path renamed. Referencing
+  // the constants means renaming a path can never desync the two again.
   const studentProtectedPaths = [
-    "/student/student-dashboard",
-    "/student/student-profile",
-    "/student/student-order-history",
-    "/student/student-messages",
-    "/student/student-courses",
-    "/student/student-course-resume",
-    "/student/student-certificates",
-    "/student/student-reviews",
-    "/student/student-wishlist",
-    "/student/student-quiz",
-    "/student/student-quiz-questions",
-    "/student/student-referral",
-    "/student/student-tickets",
-    "/student/student-settings",
-    "/student/student-change-password",
-    "/student/student-social-profile",
-    "/student/student-linked-accounts",
-    "/student/student-notifications",
-    "/student/student-billing-address",
-    "/student/approval-screen",
-    "/course/course-watch",
-    // ...add all student routes here!
+    routes.studentDashboard,
+    routes.studentProfile,
+    routes.studentOrderHistory,
+    routes.studentMyProducts,
+    routes.studentMessage,
+    routes.studentCourses,
+    routes.studentCourseResume,
+    routes.studentCertificates,
+    routes.studentReviews,
+    routes.studentWishlist,
+    routes.studentQuiz,
+    routes.studentQuizQuestion,
+    routes.studentReferral,
+    routes.studentTickets,
+    routes.studentSettings,
+    routes.studentChangePassword,
+    routes.studentSocialProfile,
+    routes.studentLinkedAccounts,
+    routes.studentNotification,
+    routes.studentBillingAddress,
+    routes.studentApprovalScreen,
+    routes.myEnrollments,
+    routes.courseWatch,
   ];
   return (
     <>

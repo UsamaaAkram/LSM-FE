@@ -333,14 +333,17 @@ const submitStudentQuizAttempt = createAsyncThunk<
     studentId: string;
     quizID: string;
     answers: { questionID: string; selectedAnswerID: string }[];
+    /** #34 - how long the sitting took, shown in the attempt review. */
+    timeTakenSeconds?: number;
   }
 >(
   "student/submitQuizAttempt",
-  async ({ studentId, quizID, answers }, thunkAPI) => {
+  async ({ studentId, quizID, answers, timeTakenSeconds }, thunkAPI) => {
     try {
       const res = await axios.post(`${Base_URL}/${studentId}/submit-quiz`, {
         quizID,
         answers,
+        timeTakenSeconds,
       });
       return res.data; // { message, result }
     } catch (err: any) {
@@ -393,16 +396,39 @@ const submitStudentAssignment = createAsyncThunk<
     courseId: string;
     assignmentId: string;
     submissionText?: string;
-    // Add more fields as required, e.g. fileUrl, attachments, etc.
+    links?: string[];
+    /** Pre-hosted URL — kept so existing callers keep working. */
+    fileUrl?: string;
+    /** An actual picked file, uploaded as multipart (#3.6). */
+    file?: File | null;
   }
 >(
   "student/submitStudentAssignment",
-  async ({ studentId, courseId, assignmentId, submissionText }, thunkAPI) => {
+  async (
+    { studentId, courseId, assignmentId, submissionText, links, fileUrl, file },
+    thunkAPI
+  ) => {
+    const url = `${Base_URL}/${studentId}/course/${courseId}/assignment/${assignmentId}/submit`;
     try {
-      const res = await axios.post(
-        `${Base_URL}/${studentId}/course/${courseId}/assignment/${assignmentId}/submit`,
-        { assignment: submissionText }
-      );
+      // Only switch to multipart when there is a real file. Sending JSON for
+      // the text-only case keeps every existing caller on the exact request
+      // shape it already used.
+      if (file) {
+        const form = new FormData();
+        if (submissionText) form.append("assignment", submissionText);
+        // One entry per link: appending the array itself would stringify it
+        // into a single comma-joined value.
+        (links || []).forEach((l) => form.append("links", l));
+        if (fileUrl) form.append("fileUrl", fileUrl);
+        form.append("file", file);
+        const res = await axios.post(url, form);
+        return res.data;
+      }
+      const res = await axios.post(url, {
+        assignment: submissionText,
+        links,
+        fileUrl,
+      });
       return res.data; // Example: { message, assignmentStatus }
     } catch (err: any) {
       return thunkAPI.rejectWithValue(

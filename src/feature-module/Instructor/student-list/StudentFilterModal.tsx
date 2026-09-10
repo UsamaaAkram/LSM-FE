@@ -1,14 +1,17 @@
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import { Field, Formik, Form as FormikForm } from "formik";
-import React from "react";
+import React, { useEffect } from "react";
 import { Button, Form, Modal } from "react-bootstrap";
+import { useDispatch, useSelector } from "react-redux";
 import * as Yup from "yup";
 
 import {
   shiftOptions,
   studentTypeOptions,
 } from "../../../core/common/common-list";
+import CustomSelect from "../../../core/common/commonSelect";
+import { fetchCourses } from "../../../core/redux/courses";
 
 type FilterValues = {
   batch: string;
@@ -17,6 +20,7 @@ type FilterValues = {
   studentType: string;
   shift: string;
   enrollmentDate: string;
+  course: string;
 };
 
 const validationSchema = Yup.object().shape({
@@ -25,6 +29,7 @@ const validationSchema = Yup.object().shape({
   enrolledBy: Yup.string(),
   studentType: Yup.string(),
   shift: Yup.string(),
+  course: Yup.string(),
   //   enrollmentDate: Yup.string().nullable()
 });
 
@@ -45,6 +50,18 @@ const StudentFilterModal: React.FC<StudentFilterModalProps> = ({
   filters,
   initialValues = {},
 }) => {
+  const dispatch = useDispatch();
+  const { courses } = useSelector((state: any) => state.courses || {});
+
+  useEffect(() => {
+    dispatch(fetchCourses({ status: "published" }) as any);
+  }, [dispatch]);
+
+  const courseOptions = (courses || []).map((c: any) => ({
+    label: c.courseTitle,
+    value: c._id,
+  }));
+
   return (
     <Modal show={show} onHide={onClose} centered>
       <Formik
@@ -55,6 +72,7 @@ const StudentFilterModal: React.FC<StudentFilterModalProps> = ({
           studentType: filters?.studentType || "",
           shift: filters?.shift || "",
           enrollmentDate: filters?.enrollmentDate || "",
+          course: filters?.course || "",
           ...initialValues,
         }}
         validationSchema={validationSchema}
@@ -120,6 +138,22 @@ const StudentFilterModal: React.FC<StudentFilterModalProps> = ({
                   />
                 </Form.Group>
 
+                <Form.Group className="mb-3">
+                  <Form.Label>Course</Form.Label>
+                  <CustomSelect
+                    modal
+                    options={courseOptions}
+                    value={
+                      courseOptions.find(
+                        (opt: any) => opt.value === values.course
+                      ) || null
+                    }
+                    placeholder="Search course..."
+                    onChange={(selected) =>
+                      setFieldValue("course", selected.value)
+                    }
+                  />
+                </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Student Type</Form.Label>
                   <Field as="select" name="studentType" className="form-select">

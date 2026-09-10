@@ -348,6 +348,42 @@ const chatSlice = createSlice({
     removeChat(state, action) {
       state.chats = state.chats.filter((chat) => chat._id !== action.payload);
     },
+    // Edit/delete message (#2) — mirrors the socket broadcasts from
+    // chatSocket.js's editMessage/deleteMessage handlers.
+    removeMessage(state, action: PayloadAction<{ messageId: string }>) {
+      state.messages = state.messages.filter(
+        (m) => m._id !== action.payload.messageId
+      );
+    },
+    updateMessageContent(
+      state,
+      action: PayloadAction<{ messageId: string; content: string; editedAt?: string }>
+    ) {
+      const msg = state.messages.find((m) => m._id === action.payload.messageId);
+      if (!msg) return;
+      msg.content = action.payload.content;
+      (msg as any).editedAt = action.payload.editedAt;
+    },
+    // #2.13 — record that a participant has read one or more messages, so the
+    // sender's tick turns double. $addToSet-style: a repeated receipt for the
+    // same person must not stack up in seenBy or the "read by N" count lies.
+    markMessageSeen(
+      state,
+      action: PayloadAction<{ messageIds: string[]; userId: string }>
+    ) {
+      const { messageIds, userId } = action.payload;
+      if (!userId || !messageIds?.length) return;
+      const wanted = new Set(messageIds.map(String));
+      state.messages.forEach((m: any) => {
+        if (!wanted.has(String(m._id))) return;
+        if (!Array.isArray(m.seenBy)) m.seenBy = [];
+        const already = m.seenBy.some(
+          (id: any) =>
+            String(typeof id === "string" ? id : id?._id) === String(userId)
+        );
+        if (!already) m.seenBy.push(userId);
+      });
+    },
     updateChatUnreadSidebar(
       state,
       action: PayloadAction<{
@@ -486,6 +522,9 @@ export const {
   addMessage,
   clearMessages,
   updateMessageReaction,
+  removeMessage,
+  updateMessageContent,
+  markMessageSeen,
   removeChat,
   addOrUpdateChat,
   updateChatUnreadSidebar,

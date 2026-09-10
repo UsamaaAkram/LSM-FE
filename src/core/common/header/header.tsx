@@ -6,6 +6,7 @@ import { logout, logoutUser } from "../../redux/authSlice"; // Correct path for 
 // import { setDataTheme } from "../../redux/themeSettingSlice";
 import ImageWithBasePath from "../imageWithBasePath";
 import ImageGlobal from "../ImageGlobal/ImageGlobal";
+import NotificationBell from "../../../components/NotificationBell";
 // If you want to call a logout endpoint, import axios and call your API in handleLogout
 
 const Header = () => {
@@ -303,7 +304,16 @@ const Header = () => {
                     location.pathname === all_routes.services ? "active" : ""
                   }`}
                 >
-                  <Link to={all_routes.services}>Services</Link>
+                  <Link to={all_routes.services}>Shop</Link>
+                </li>
+                <li
+                  className={`has-submenu ${
+                    location.pathname === all_routes.successStories
+                      ? "active"
+                      : ""
+                  }`}
+                >
+                  <Link to={all_routes.successStories}>Success Stories</Link>
                 </li>
                 <li
                   className={`has-submenu ${
@@ -319,17 +329,59 @@ const Header = () => {
                 >
                   <Link to={all_routes.contactUs}>Contact Us</Link>
                 </li>
-                <li
-                  className={`has-submenu ${
-                    location.pathname === all_routes.privacyPolicy
-                      ? "active"
-                      : ""
-                  }`}
-                >
-                  <Link to={all_routes.privacyPolicy}>Privacy Policy</Link>
-                </li>
+                {/* Privacy Policy moved to footer-only (#17) — Success Stories
+                    nav link (after Services) is added once that page (T6.3)
+                    exists, to avoid a dead link in the meantime. */}
               </ul>
+              {/* Mobile-drawer auth links (#18) — guestButtons/userButtons
+                  below live outside this drawer and can be hidden by the
+                  responsive header CSS on small screens, so the drawer
+                  needs its own copy to stay reachable there. */}
+              <div className="d-lg-none px-3 pb-3">
+                {user ? (
+                  <div className="d-flex flex-column gap-2">
+                    <Link
+                      to={
+                        user?.role === "instructor" || user?.role === "admin"
+                          ? all_routes.instructorDashboard
+                          : all_routes.studentDashboard
+                      }
+                      className="btn btn-secondary d-flex align-items-center justify-content-center"
+                    >
+                      <i className="isax isax-grid-35 me-2" />
+                      Dashboard
+                    </Link>
+                    <Link
+                      to={all_routes.homeone}
+                      className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                      onClick={handleLogout}
+                    >
+                      <i className="isax isax-logout me-2" />
+                      Logout
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="d-flex flex-column gap-2">
+                    <Link
+                      to={all_routes.login}
+                      className="btn btn-secondary d-flex align-items-center justify-content-center"
+                    >
+                      <i className="isax isax-lock-circle me-2" />
+                      Sign In
+                    </Link>
+                    <Link
+                      to={all_routes.register}
+                      className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                    >
+                      Sign Up
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
+            {/* #2.16 — notification bell, signed-in users only. The component
+                returns null when there's no user, so no guard needed here. */}
+            <NotificationBell />
             {user ? userButtons : guestButtons}
           </div>
         </div>

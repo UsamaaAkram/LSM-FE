@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux";
 import { fetchCourses } from "../../../core/redux/courses";
 import type { AppDispatch } from "../../../core/redux/store";
 import { getAllStudents } from "../../../core/redux/studentSlice";
+import { courseUrl } from "../../../core/common/courseLink";
 
 const InstructorDashboard = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -188,7 +189,7 @@ const InstructorDashboard = () => {
                             <div>
                               <p className="fw-medium mb-0">
                                 <Link
-                                  to={`${all_routes.courseDetails}?id=${course._id}`}
+                                  to={courseUrl(course)}
                                 >
                                   {course.courseTitle}
                                 </Link>

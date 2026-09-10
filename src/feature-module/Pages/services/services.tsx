@@ -1,29 +1,26 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import ImageGlobal from "../../../core/common/ImageGlobal/ImageGlobal";
-import { WHATSAPP_ENROLL } from "../../../core/common/bluverseLinks";
 import { formatPrice, hasPrice } from "../../../core/common/coursePrice";
 import { fetchProducts } from "../../../core/redux/productSlice";
-import { createOrder } from "../../../core/redux/orderSlice";
+import { all_routes as routes } from "../../router/all_routes";
 import type { AppDispatch, RootState } from "../../../core/redux/store";
 
 // Shop (#42/#43) — replaces the old static "What We Offer" services page.
-// Buy Now hands off to WhatsApp (no payment gateway, per the doc); Submit
-// Payment Proof is the manual verification pipeline layered on top of that.
+//
+// This is the browse-and-filter grid only. Buy Now hands off to the Order
+// Verification page, which owns contacting the seller and submitting payment
+// proof; keeping that off the grid means the purchase flow has one home
+// instead of a modal that competed with a WhatsApp link.
 const Services = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const currentUser = useSelector((state: RootState) => (state as any).auth.user);
   const { products, loading } = useSelector(
     (state: RootState) => (state as any).product
   );
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
-  const [proofFor, setProofFor] = useState<any>(null);
-  const [transactionId, setTransactionId] = useState("");
-  const [screenshot, setScreenshot] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     dispatch(fetchProducts({ search, category }) as any);
@@ -32,40 +29,6 @@ const Services = () => {
   const categories = Array.from(
     new Set(products.map((p: any) => p.category))
   ) as string[];
-
-  const isStudent = currentUser?.role === "student";
-
-  const handleSubmitProof = async () => {
-    if (!proofFor) return;
-    if (!isStudent) {
-      toast.error("Only logged-in students can submit payment proof.");
-      return;
-    }
-    setSubmitting(true);
-    const formData = new FormData();
-    formData.append("productId", proofFor._id);
-    formData.append("studentId", currentUser._id);
-    formData.append(
-      "studentName",
-      currentUser?.student?.firstName && currentUser?.student?.lastName
-        ? `${currentUser.student.firstName} ${currentUser.student.lastName}`
-        : currentUser?.student?.userName || ""
-    );
-    formData.append("studentEmail", currentUser?.student?.email || "");
-    formData.append("transactionId", transactionId);
-    if (screenshot) formData.append("paymentScreenshot", screenshot);
-
-    const result: any = await dispatch(createOrder(formData) as any);
-    setSubmitting(false);
-    if (result.type?.endsWith("/rejected")) {
-      toast.error(result.payload?.message || "Could not submit. Please try again.");
-    } else {
-      toast.success("Payment proof submitted — we'll review it shortly.");
-      setProofFor(null);
-      setTransactionId("");
-      setScreenshot(null);
-    }
-  };
 
   return (
     <>
@@ -141,23 +104,17 @@ const Services = () => {
                             {formatPrice(p.price)}
                           </p>
                         )}
-                        <div className="d-flex gap-2">
-                          <a
-                            href={WHATSAPP_ENROLL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-primary w-100"
-                          >
-                            Buy Now
-                          </a>
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary w-100"
-                            onClick={() => setProofFor(p)}
-                          >
-                            I've Paid
-                          </button>
-                        </div>
+                        {/* Buy Now now opens a real Order Verification page
+                            (contact the seller, then submit proof) instead of
+                            jumping straight to WhatsApp with the separate
+                            "I've Paid" modal beside it — the client's note was
+                            that "I've paid" had nowhere to go. */}
+                        <Link
+                          to={`${routes.shopOrderVerification}?product=${p._id}`}
+                          className="btn btn-primary w-100"
+                        >
+                          Buy Now
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -168,67 +125,6 @@ const Services = () => {
         </div>
       </section>
 
-      {/* Submit Payment Proof modal (#43) */}
-      <div
-        className={`modal fade${proofFor ? " show d-block" : ""}`}
-        style={proofFor ? { background: "rgba(0,0,0,0.2)" } : {}}
-      >
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5>Submit Payment Proof</h5>
-              <button
-                type="button"
-                className="btn-close custom-btn-close"
-                onClick={() => setProofFor(null)}
-              >
-                <i className="isax isax-close-circle5" />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p className="text-muted">
-                For: <strong>{proofFor?.title}</strong>
-              </p>
-              <div className="mb-3">
-                <label className="form-label">Transaction ID</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={transactionId}
-                  onChange={(e) => setTransactionId(e.target.value)}
-                  placeholder="e.g. TXN123456"
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Payment Screenshot</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="form-control"
-                  onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-light"
-                onClick={() => setProofFor(null)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={submitting || (!transactionId && !screenshot)}
-                onClick={handleSubmitProof}
-              >
-                {submitting ? "Submitting..." : "Submit"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </>
   );
 };

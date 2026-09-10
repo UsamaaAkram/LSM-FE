@@ -1,6 +1,7 @@
-﻿export const all_routes = {
+export const all_routes = {
   //Home Modules
-  homeone: "/index",
+  // #48 — /home is the canonical landing route; /index still redirects here.
+  homeone: "/home",
   hometwo: "/index-2",
   homethree: "/index-3",
   homefour: "/index-4",
@@ -8,9 +9,11 @@
   homesix: "/index-6",
 
   //Course Modules
-  courseGrid: "/course/course-grid",
-  courseList: "/course/course-list",
-  courseDetails: "/course/course-details",
+  // #48 — public course browsing gets clean URLs; the admin-only add/edit
+  // screens stay where they are since they aren't public or shareable.
+  courseGrid: "/courses",
+  courseList: "/courses/list",
+  courseDetails: "/courses/details",
   courseDetails2: "/course/course-details-2",
   courseCategory: "/course/course-category",
   courseCategory2: "/course/course-category-2",
@@ -52,26 +55,33 @@
   instructorReferral: "/instructor/instructor-withdraw",
   instructorQA: "/instructor/instructor-quiz-questions",
   instructorsettings: "/instructor/instructor-settings",
-  instructorShop: "/instructor/instructor-shop",
   approvalScreen: "/instructor/approval-screen",
   allInstructorList: "/instructor/instructor-list",
 
-  studentDashboard: "/student/student-dashboard",
-  studentProfile: "/student/student-profile",
+  // #48 — clean, memorable dashboard routes. The legacy /student/* paths all
+  // redirect here (see router.link.tsx), and the student access guard reads
+  // these same constants, so the two can't drift apart.
+  studentDashboard: "/dashboard",
+  studentProfile: "/profile",
   studentsGrid: "/instructor/students",
   studentsDetails: "/instructor/students-details",
   studentsList: "/instructor/student-list",
-  studentOrderHistory: "/student/student-order-history",
-  studentMessage: "/student/student-messages",
-  studentCourses: "/student/student-courses",
-  studentCourseResume: "/student/student-course-resume",
-  studentCertificates: "/student/student-certificates",
+  studentOrderHistory: "/my-orders",
+  // Shop order pipeline. studentMyProducts supersedes studentOrderHistory
+  // (which was the template's invented-rows page); the old path stays
+  // registered and redirects, so any link already shared keeps working.
+  studentMyProducts: "/my-products",
+  shopOrderVerification: "/shop/checkout",
+  studentMessage: "/messages",
+  studentCourses: "/my-courses",
+  studentCourseResume: "/my-courses/resume",
+  studentCertificates: "/certificates",
   studentReviews: "/student/student-reviews",
-  studentWishlist: "/student/student-wishlist",
-  studentQuiz: "/student/student-quiz",
-  studentQuizQuestion: "/student/student-quiz-questions",
+  studentWishlist: "/wishlist",
+  studentQuiz: "/quizzes",
+  studentQuizQuestion: "/quizzes/questions",
   studentReferral: "/student/student-referral",
-  studentTickets: "/student/student-tickets",
+  studentTickets: "/support-tickets",
   studentSettings: "/student/student-settings",
   studentChangePassword: "/student/student-change-password",
   studentSocialProfile: "/student/student-social-profile",
@@ -88,11 +98,28 @@
   setpassowrd: "/set-password",
   otp: "/otp",
   lockscreen: "/lock-screen",
-  privacyPolicy: "/pages/privacy-policy",
-  termsConditions: "/terms-conditions",
-  contactUs: "pages/contact-us",
-  about_us: "/pages/about-us",
-  services: "/pages/services",
+  // #48 clean public URLs. These are the canonical paths; the previous
+  // /pages/* and /course/* forms are kept as redirects in router.link.tsx so
+  // existing links and bookmarks keep working.
+  //
+  // contactUs previously read "pages/contact-us" with NO leading slash, which
+  // React Router treats as RELATIVE — it resolved differently depending on the
+  // page you were on. Now absolute like every other route.
+  privacyPolicy: "/privacy-policy",
+  termsConditions: "/terms",
+  contactUs: "/contact",
+  about_us: "/about",
+  services: "/shop",
+  successStories: "/success-stories",
+  instructorSuccessStories: "/instructor/instructor-success-stories",
+  instructorShop: "/instructor/instructor-shop",
+  instructorShopOrders: "/instructor/shop-orders",
+  // #47 enrollment + #48 clean routes: the whole 3-step flow stays on /enroll,
+  // deep-linked per course via /enroll?course=<id>.
+  enroll: "/enroll",
+  enrollStatus: "/enroll-status",
+  myEnrollments: "/my-enrollments",
+  instructorEnrollments: "/instructor/enrollment-requests",
   invoices: "/pages/invoices",
   FAQ: "/pages/faq",
   pricingPlan: "/pages/pricing-plan",

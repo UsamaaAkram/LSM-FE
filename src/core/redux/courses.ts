@@ -63,8 +63,10 @@ export const createCourse = createAsyncThunk(
       if (courseData.courseThumbnail instanceof File) {
         payload = new FormData();
         for (const key in courseData) {
-          if (key === "curriculum") {
-            payload.append("curriculum", JSON.stringify(courseData.curriculum));
+          // Arrays/objects must be JSON-encoded: FormData stringifies them to
+          // "[object Object]" otherwise, silently destroying the value.
+          if (key === "curriculum" || key === "plans") {
+            payload.append(key, JSON.stringify((courseData as any)[key] ?? []));
           } else if (key === "courseThumbnail") {
             if (courseData.courseThumbnail)
               payload.append("courseThumbnail", courseData.courseThumbnail);
@@ -122,6 +124,23 @@ export const fetchCourseById = createAsyncThunk(
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || "Fetch course failed"
+      );
+    }
+  }
+);
+
+// #48 — fetch by URL slug (GET /api/courses/slug/:slug), so a course page can
+// live at /courses/tiktok-automation instead of exposing a database id.
+// Reuses fetchCourseById's reducers by matching its action type prefix.
+export const fetchCourseBySlug = createAsyncThunk(
+  "courses/fetchCourseById/bySlug",
+  async (slug: string, thunkAPI) => {
+    try {
+      const res = await axios.get(`${Base_URL}/slug/${slug}`);
+      return res.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.error || "Course not found"
       );
     }
   }
@@ -240,6 +259,23 @@ const coursesSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchCourseById.rejected, (state, action) => {
+        state.loading = false;
+        state.currentCourse = null;
+        state.error = action.payload as string;
+      })
+      // FETCH BY SLUG (#48) — same shape as fetch-by-id, so it feeds the exact
+      // same currentCourse state.
+      .addCase(fetchCourseBySlug.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.currentCourse = null;
+      })
+      .addCase(fetchCourseBySlug.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentCourse = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchCourseBySlug.rejected, (state, action) => {
         state.loading = false;
         state.currentCourse = null;
         state.error = action.payload as string;

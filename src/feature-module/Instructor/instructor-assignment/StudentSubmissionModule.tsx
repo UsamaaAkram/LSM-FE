@@ -20,6 +20,13 @@ const StudentSubmissionModule = () => {
   // Dropdown data
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedStudent, setSelectedStudent] = useState("");
+  // Review form (#27) — marks + written feedback + status, instead of a
+  // single "Mark as Checked" toggle.
+  const [reviewMarks, setReviewMarks] = useState("");
+  const [reviewFeedback, setReviewFeedback] = useState("");
+  const [reviewStatus, setReviewStatus] = useState<
+    "Reviewed" | "Needs Revision" | "Completed"
+  >("Reviewed");
 
   const courses: any = useSelector<RootState>(
     (state: any) => state.courses.courses
@@ -67,17 +74,25 @@ const StudentSubmissionModule = () => {
       render: (value: string) =>
         value ? dayjs(value).format("YYYY-MM-DD") : "",
     },
-    { title: "Student", dataIndex: "studentName" },
-
     {
       title: "Status",
-      dataIndex: "isSubmitted",
-      render: (val: any) =>
-        val ? (
-          <span className="badge bg-success">Checked</span>
-        ) : (
-          <span className="badge bg-danger">Not Checked</span>
-        ),
+      dataIndex: "status",
+      render: (_: any, record: any) => {
+        const status = record.status || "Pending";
+        const badgeClass: Record<string, string> =
+          {
+            Pending: "bg-light text-dark",
+            "Under Review": "bg-warning",
+            Reviewed: "bg-info",
+            "Needs Revision": "bg-danger",
+            Completed: "bg-success",
+          };
+        return (
+          <span className={`badge ${badgeClass[status] || "bg-light text-dark"}`}>
+            {status}
+          </span>
+        );
+      },
     },
 
     {
@@ -88,7 +103,17 @@ const StudentSubmissionModule = () => {
           style={{
             cursor: "pointer",
           }}
-          onClick={() => dispatch(setSelectedSubmission(record))}
+          onClick={() => {
+            dispatch(setSelectedSubmission(record));
+            setReviewMarks(record.marks != null ? String(record.marks) : "");
+            setReviewFeedback(record.feedback || "");
+            setReviewStatus(
+              record.status === "Needs Revision" ||
+                record.status === "Completed"
+                ? record.status
+                : "Reviewed"
+            );
+          }}
         ></span>
       ),
     },
@@ -155,21 +180,22 @@ const StudentSubmissionModule = () => {
                     studentId: s.studentId,
                     courseId: s.courseId,
                     assignmentsID: s.assignmentsID,
+                    status: reviewStatus,
+                    marks: reviewMarks ? Number(reviewMarks) : undefined,
+                    feedback: reviewFeedback,
                   })
-                );
-                dispatch(
-                  fetchStudentSubmissions({
-                    studentId: selectedStudent || undefined,
-                    courseId: selectedCourse || undefined,
-                  }) as any
-                );
+                ).then(() => {
+                  dispatch(
+                    fetchStudentSubmissions({
+                      studentId: selectedStudent || undefined,
+                      courseId: selectedCourse || undefined,
+                    }) as any
+                  );
+                });
               }
             }}
-            disabled={studentSubmission?.selectedSubmission?.isSubmitted}
           >
-            {studentSubmission?.selectedSubmission?.isSubmitted
-              ? "Already Checked"
-              : "Mark as Checked"}
+            Save Review
           </Button>,
         ]}
         width={600}
@@ -195,15 +221,100 @@ const StudentSubmissionModule = () => {
                 : ""}
             </p>
 
-            <p>
-              <strong>Assignment</strong>{" "}
+            <div className="mb-2">
+              <strong>Assignment</strong>
               <div
                 className="prose max-w-none"
                 dangerouslySetInnerHTML={{
                   __html: studentSubmission?.selectedSubmission.assignment,
                 }}
               />
-            </p>
+            </div>
+
+            {!!studentSubmission?.selectedSubmission.links?.length && (
+              <div className="mb-3">
+                <strong>Links</strong>
+                <ul className="mb-0">
+                  {studentSubmission.selectedSubmission.links.map(
+                    (link: string, i: number) => (
+                      <li key={i}>
+                        <a href={link} target="_blank" rel="noopener noreferrer">
+                          {link}
+                        </a>
+                      </li>
+                    )
+                  )}
+                </ul>
+              </div>
+            )}
+
+            {/* #3.6 - the attachment a student uploaded. fileUrl already
+                existed on the schema but nothing ever produced it, so this
+                never had anything to show before. */}
+            {(studentSubmission?.selectedSubmission.file?.url ||
+              studentSubmission?.selectedSubmission.fileUrl) && (
+              <div className="mb-3">
+                <strong>Attachment</strong>
+                <div>
+                  <a
+                    href={
+                      studentSubmission.selectedSubmission.file?.url ||
+                      studentSubmission.selectedSubmission.fileUrl
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <i className="isax isax-document-download me-1" />
+                    {studentSubmission.selectedSubmission.file?.originalname ||
+                      "Download submitted file"}
+                  </a>
+                  {studentSubmission.selectedSubmission.file?.size ? (
+                    <small className="text-muted ms-2">
+                      (
+                      {Math.max(
+                        1,
+                        Math.round(
+                          studentSubmission.selectedSubmission.file.size / 1024
+                        )
+                      )}{" "}
+                      KB)
+                    </small>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
+            <hr />
+            <div className="mb-3">
+              <label className="form-label d-block">Status</label>
+              <select
+                className="form-select"
+                value={reviewStatus}
+                onChange={(e) => setReviewStatus(e.target.value as any)}
+              >
+                <option value="Reviewed">Reviewed</option>
+                <option value="Needs Revision">Needs Revision</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+            <div className="mb-3">
+              <label className="form-label d-block">Marks</label>
+              <input
+                type="number"
+                className="form-control"
+                value={reviewMarks}
+                onChange={(e) => setReviewMarks(e.target.value)}
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label d-block">Feedback</label>
+              <textarea
+                className="form-control"
+                rows={3}
+                value={reviewFeedback}
+                onChange={(e) => setReviewFeedback(e.target.value)}
+              />
+            </div>
           </div>
         )}
       </Modal>

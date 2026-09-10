@@ -22,6 +22,11 @@ export const studentSidebarData = [
     //     route: all_routes.studentCourseResume
     // },
     {
+        title:'My Enrollments',
+        icon:'isax isax-clipboard-tick',
+        route: all_routes.myEnrollments
+    },
+    {
         title:'Certificates',
         icon:'isax isax-note-215',
         route: all_routes.studentCertificates
@@ -43,11 +48,13 @@ export const studentSidebarData = [
         route: all_routes.studentQuiz,
         subRoute: all_routes.studentQuizQuestion
     },
-    // {
-    //     title:'Order History',
-    //     icon:'isax isax-shopping-cart5',
-    //     route: all_routes.studentOrderHistory
-    // },
+    {
+        // Was commented out while Order History showed template rows. It is a
+        // real page now (the student's own Shop orders and deliveries).
+        title:'My Products',
+        icon:'isax isax-shopping-cart5',
+        route: all_routes.studentMyProducts
+    },
     // {
     //     title:'Referrals',
     //     icon:'isax isax-tag-user5',

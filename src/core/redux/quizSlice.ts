@@ -5,6 +5,7 @@ import axios from "axios";
 export interface Quiz {
   _id?: string;
   courseID: string;
+  lessonID?: string;
   title: string;
   totalMarks: number;
   passMark: number;

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation } from "react-router-dom";
 import moment from "moment";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
+import QuizAttemptReview from "../../../core/common/QuizAttemptReview";
 import ImageGlobal from "../../../core/common/ImageGlobal/ImageGlobal";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import {
@@ -42,6 +43,9 @@ const StudentQuizQuestion = () => {
   // Timer state
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // #34 - taken from the wall clock rather than derived from secondsLeft,
+  // which stays at 0 for quizzes that have no duration set.
+  const startedAtRef = useRef<number | null>(null);
 
   // Fetch quiz and quiz attempt status
   useEffect(() => {
@@ -150,7 +154,10 @@ const StudentQuizQuestion = () => {
   const handlePrev = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
-  const handleStartQuiz = () => setShowStartScreen(false);
+  const handleStartQuiz = () => {
+    startedAtRef.current = Date.now();
+    setShowStartScreen(false);
+  };
 
   const [result, setResult] = useState<any>(null);
   const handleSubmit = async (isAuto = false) => {
@@ -170,6 +177,9 @@ const StudentQuizQuestion = () => {
       studentId: authUser._id,
       quizID: quiz._id,
       answers: answersArray,
+      timeTakenSeconds: startedAtRef.current
+        ? Math.round((Date.now() - startedAtRef.current) / 1000)
+        : undefined,
     };
 
     try {
@@ -276,6 +286,26 @@ const StudentQuizQuestion = () => {
                           </>
                         )}
                       </div>
+                      {/* #34 - the student can now see which questions they
+                          got wrong and what the right answer was, instead of
+                          just a pass/fail badge. */}
+                      {!!result?.answers?.length && (
+                        <div className="mb-4">
+                          <h6 className="mb-3">Your answers</h6>
+                          <QuizAttemptReview
+                            attempts={[
+                              {
+                                attemptNumber: result.totalAttempts,
+                                marks: result.marks,
+                                totalMarks: result.totalMarks,
+                                percentage: result.percent,
+                                passed: result.passed,
+                                answers: result.answers,
+                              },
+                            ]}
+                          />
+                        </div>
+                      )}
                       <div className="d-flex align-items-center justify-content-center">
                         <Link
                           to={route.studentQuiz}

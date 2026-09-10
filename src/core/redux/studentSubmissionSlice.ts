@@ -52,21 +52,28 @@ const markSubmissionChecked = createAsyncThunk(
       studentId,
       courseId,
       assignmentsID, // use assignmentsID from your data
+      status,
+      marks,
+      feedback,
     }: {
       studentId: string;
       courseId: string;
       assignmentsID: string;
+      status?: "Reviewed" | "Needs Revision" | "Completed";
+      marks?: number;
+      feedback?: string;
     },
     thunkAPI
   ) => {
     try {
       const res = await axios.post(
-        `${Base_URL_STUDENT}/${studentId}/course/${courseId}/assignment/${assignmentsID}/mark-submitted`
+        `${Base_URL_STUDENT}/${studentId}/course/${courseId}/assignment/${assignmentsID}/mark-submitted`,
+        { status, marks, feedback }
       );
       return { ...res.data.assignment, studentId, courseId, assignmentsID };
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.error || "Failed to mark as checked"
+        err.response?.data?.error || "Failed to review submission"
       );
     }
   }

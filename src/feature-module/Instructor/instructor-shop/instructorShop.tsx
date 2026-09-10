@@ -13,7 +13,7 @@ import {
   fetchProducts,
   updateProduct,
 } from "../../../core/redux/productSlice";
-import { fetchOrders, updateOrderStatus } from "../../../core/redux/orderSlice";
+import { all_routes as routes } from "../../router/all_routes";
 import type { AppDispatch, RootState } from "../../../core/redux/store";
 import InstructorSidebar from "../common/instructorSidebar";
 import ProfileCard from "../common/profileCard";
@@ -27,29 +27,24 @@ const emptyProduct = {
   status: "draft" as "draft" | "published",
 };
 
-// Shop admin (#42/#43) — product catalog CRUD + order review queue
-// (approve/reject payment proof, hand over delivered content).
+// Shop admin (#42/#43) — product catalog CRUD.
+//
+// Order review moved to its own page (instructor-shop-orders): payment
+// verification, typed delivery and the status timeline are too much for a tab,
+// and running two review screens over the same records is what let the admin
+// and student views disagree.
 const InstructorShop = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { products, loading: productsLoading } = useSelector(
     (state: RootState) => (state as any).product
   );
-  const { orders, loading: ordersLoading } = useSelector(
-    (state: RootState) => (state as any).order
-  );
-
   const [showProductModal, setShowProductModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyProduct);
   const [image, setImage] = useState<File | null>(null);
 
-  const [reviewOrder, setReviewOrder] = useState<any>(null);
-  const [deliveredContent, setDeliveredContent] = useState("");
-  const [adminNote, setAdminNote] = useState("");
-
   useEffect(() => {
     dispatch(fetchProducts({ includeDrafts: "true" }) as any);
-    dispatch(fetchOrders({}) as any);
   }, [dispatch]);
 
   const openAddProduct = () => {
@@ -96,30 +91,6 @@ const InstructorShop = () => {
     toast.success("Product deleted.");
   };
 
-  const openReview = (order: any) => {
-    setReviewOrder(order);
-    setDeliveredContent(order.deliveredContent || "");
-    setAdminNote(order.adminNote || "");
-  };
-
-  const handleReviewSave = async (status: string) => {
-    if (!reviewOrder) return;
-    const result: any = await dispatch(
-      updateOrderStatus({
-        id: reviewOrder._id,
-        status,
-        deliveredContent,
-        adminNote,
-      }) as any
-    );
-    if (result.type?.endsWith("/rejected")) {
-      toast.error(result.payload?.message || "Update failed.");
-    } else {
-      toast.success(`Order marked ${status}.`);
-      setReviewOrder(null);
-    }
-  };
-
   const productColumns = [
     {
       title: "Image",
@@ -164,55 +135,6 @@ const InstructorShop = () => {
     },
   ];
 
-  const orderColumns = [
-    { title: "Product", dataIndex: "productTitle" },
-    { title: "Student", dataIndex: "studentName" },
-    {
-      // #43 — the figure to check the payment screenshot against. Orders placed
-      // before this was recorded show a dash rather than a made-up number.
-      title: "Amount",
-      dataIndex: "pricePaid",
-      render: (v: string) =>
-        hasPrice(v) ? (
-          formatPrice(v)
-        ) : (
-          <span className="text-muted" title="Not recorded for this order">
-            —
-          </span>
-        ),
-    },
-    {
-      title: "Date",
-      dataIndex: "createdAt",
-      render: (v: string) => moment(v).format("DD MMM YYYY"),
-    },
-    { title: "Transaction ID", dataIndex: "transactionId" },
-    {
-      title: "Proof",
-      render: (_: any, r: any) =>
-        r.paymentScreenshotUrl ? (
-          <a href={r.paymentScreenshotUrl} target="_blank" rel="noopener noreferrer">
-            View
-          </a>
-        ) : (
-          "—"
-        ),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      render: (v: string) => <span className="badge bg-secondary">{v}</span>,
-    },
-    {
-      title: "Action",
-      render: (_: any, r: any) => (
-        <Link to="#" onClick={() => openReview(r)}>
-          Review
-        </Link>
-      ),
-    },
-  ];
-
   return (
     <>
       <Breadcrumb title="Shop" />
@@ -236,20 +158,23 @@ const InstructorShop = () => {
                     Products
                   </Link>
                 </li>
-                <li className="nav-item">
-                  <Link
-                    className="btn nav-link"
-                    data-bs-toggle="tab"
-                    role="tab"
-                    to="#shop-orders"
-                  >
-                    Orders
-                  </Link>
-                </li>
+
               </ul>
               <div className="tab-content">
                 <div className="tab-pane active show" id="shop-products" role="tabpanel">
-                  <div className="d-flex justify-content-end mb-3">
+                  <div className="d-flex justify-content-end gap-2 mb-3">
+                    {/* Order review lives on its own page now (payment
+                        verification, typed delivery, timeline). The cut-down
+                        Orders tab that used to sit here wrote the same records
+                        with a different vocabulary, which is how the admin and
+                        student views ended up disagreeing. */}
+                    <Link
+                      to={routes.instructorShopOrders}
+                      className="btn btn-outline-secondary"
+                    >
+                      <i className="isax isax-receipt-item me-1" />
+                      Shop Orders
+                    </Link>
                     <button className="btn btn-secondary" onClick={openAddProduct}>
                       <i className="isax isax-add-circle me-1" />
                       Add Product
@@ -263,15 +188,7 @@ const InstructorShop = () => {
                     <Table dataSource={products} columns={productColumns} Search={false} />
                   )}
                 </div>
-                <div className="tab-pane" id="shop-orders" role="tabpanel">
-                  {ordersLoading ? (
-                    <div className="text-center py-5">
-                      <span className="spinner-border" />
-                    </div>
-                  ) : (
-                    <Table dataSource={orders} columns={orderColumns} Search={false} />
-                  )}
-                </div>
+
               </div>
             </div>
           </div>
@@ -395,87 +312,6 @@ const InstructorShop = () => {
       </div>
 
       {/* Order review modal */}
-      <div
-        className={`modal fade${reviewOrder ? " show d-block" : ""}`}
-        style={reviewOrder ? { background: "rgba(0,0,0,0.2)" } : {}}
-      >
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5>Review Order</h5>
-              <button
-                type="button"
-                className="btn-close custom-btn-close"
-                onClick={() => setReviewOrder(null)}
-              >
-                <i className="isax isax-close-circle5" />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>
-                <strong>Product:</strong> {reviewOrder?.productTitle}
-              </p>
-              <p>
-                <strong>Student:</strong> {reviewOrder?.studentName} (
-                {reviewOrder?.studentEmail})
-              </p>
-              <p>
-                <strong>Transaction ID:</strong> {reviewOrder?.transactionId || "—"}
-              </p>
-              {reviewOrder?.paymentScreenshotUrl && (
-                <div className="mb-3">
-                  <ImageGlobal
-                    src={reviewOrder.paymentScreenshotUrl}
-                    alt="Payment proof"
-                    height={200}
-                  />
-                </div>
-              )}
-              <div className="mb-3">
-                <label className="form-label">
-                  Delivered Content{" "}
-                  <small className="text-muted">(link/key/credentials)</small>
-                </label>
-                <textarea
-                  className="form-control"
-                  rows={2}
-                  value={deliveredContent}
-                  onChange={(e) => setDeliveredContent(e.target.value)}
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Admin Note</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={adminNote}
-                  onChange={(e) => setAdminNote(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="btn btn-outline-danger"
-                onClick={() => handleReviewSave("Rejected")}
-              >
-                Reject
-              </button>
-              <button
-                className="btn btn-info"
-                onClick={() => handleReviewSave("Approved")}
-              >
-                Approve
-              </button>
-              <button
-                className="btn btn-success"
-                onClick={() => handleReviewSave("Completed")}
-              >
-                Mark Completed
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </>
   );
 };

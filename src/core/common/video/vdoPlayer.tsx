@@ -12,9 +12,14 @@ const VDO_SCRIPT = "https://player.vdocipher.com/v2/api.js";
 // switched from bitrate values to resolution labels (360p / 720p HD / 1080p
 // Full HD). That theme is then selected per-embed by its id.
 //
-// Set VITE_VDOCIPHER_PLAYER_ID to that theme's id. Left unset, VdoCipher falls
-// back to the account default player, so this stays safe if it is missing.
-const VDO_PLAYER_ID = import.meta.env.VITE_VDOCIPHER_PLAYER_ID || "";
+// The client's player id is the built-in default rather than env-only. It is
+// public config, not a secret - it travels to the browser in the embed either
+// way - and there is one VdoCipher account, so baking it in means the fix works
+// the moment this is deployed instead of waiting on a server env change (which
+// is exactly how the mail-sender fix ended up stranded). VITE_VDOCIPHER_PLAYER_ID
+// still overrides it for testing another theme.
+const VDO_PLAYER_ID =
+  import.meta.env.VITE_VDOCIPHER_PLAYER_ID || "F1lbHXZ3ROhs6z6j";
 
 type Segment = { start: number; end: number };
 

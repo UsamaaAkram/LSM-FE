@@ -1,3 +1,4 @@
+import axios from "axios";
 import moment from "moment";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -25,6 +26,8 @@ import VideoPlayer from "../../HomePages/home-one/section/videoPlayer";
 import VdoPlayer from "../../../core/common/video/vdoPlayer";
 import { all_routes } from "../../router/all_routes";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
@@ -48,12 +51,76 @@ const CourseWatch = () => {
 
   const [openedAssignId, setOpenedAssignId] = useState<string | null>(null);
   const [submissionText, setSubmissionText] = useState<any>({});
+  const [submissionLinks, setSubmissionLinks] = useState<any>({});
+  // #3.6 - a picked file per assignment. Kept as the File object, not a
+  // data URL, so the upload streams instead of being base64-inflated.
+  const [submissionFiles, setSubmissionFiles] = useState<any>({});
   const [isUpdating, setIsUpdating] = useState(false);
   const [lesson, setLesson] = useState<any>({});
   type Segment = { start: number; end: number };
   const [watchedSegments, setWatchedSegments] = useState<Segment[]>([]);
   const [duration, setDuration] = useState(0);
   const [activeLesson, setActiveLesson] = useState<string | null>(null);
+  // #33 LMS Guide. Its watch state is deliberately kept in throwaway local
+  // state and never passed to saveWatchProgress (which is gated on
+  // `lesson?._id`), so watching the Guide can never touch course progress,
+  // lesson counts or completion percentages.
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [guideSegments, setGuideSegments] = useState<Segment[]>([]);
+  const [guideDuration, setGuideDuration] = useState(0);
+
+  // #39.5 — on a phone the curriculum sits BELOW the player, so picking a
+  // lesson would leave the student looking at the list with the new video
+  // offscreen above them. Scroll the player back into view after each pick.
+  // Only below the lg breakpoint: on desktop both are already visible.
+  const playerRef = useRef<HTMLDivElement | null>(null);
+  const scrollToPlayer = () => {
+    if (window.matchMedia("(min-width: 992px)").matches) return;
+    playerRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+    });
+  };
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  // lessonID -> percent watched, for the sidebar progress ring (#30/T5.4)
+  const [lessonProgress, setLessonProgress] = useState<Record<string, number>>(
+    {}
+  );
+
+  // Refetch on mount and whenever the active lesson changes (i.e. after
+  // switching away from one, once its progress has been saved) — NOT on
+  // every watchedSegments update, which fires continuously during playback
+  // and would otherwise spam this endpoint.
+  useEffect(() => {
+    if (!std || !id) return;
+    axios
+      .get(`${API_URL}/api/students/${std}/course/${id}/lessons-watched`)
+      .then((res) => {
+        const map: Record<string, number> = {};
+        (res.data?.lessonWatched || []).forEach((lw: any) => {
+          const pct =
+            lw.videoTime > 0
+              ? Math.min(100, Math.round((lw.presentWatch / lw.videoTime) * 100))
+              : lw.completed
+              ? 100
+              : 0;
+          map[lw.videoID] = pct;
+        });
+        setLessonProgress(map);
+      })
+      .catch(() => setLessonProgress({}));
+  }, [std, id, activeLesson]);
+
+  // Quiz tab (#29) — scoped to the selected lesson via quiz.lessonID.
+  useEffect(() => {
+    if (!id) return;
+    axios
+      .get(`${API_URL}/api/quizzes`, { params: { courseID: id } })
+      .then((res) => setQuizzes(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setQuizzes([]));
+  }, [id]);
 
   const submitLoading = useSelector(
     (state: any) => state.student.submitAssignmentLoading
@@ -202,9 +269,14 @@ const CourseWatch = () => {
         <div className="container-fluid">
           <div className="course-watch-section">
             <div className="row">
-              {/* ========== LEFT SIDE: Lesson List ========== */}
+              {/* ========== LEFT SIDE: Lesson List ==========
+                  #39 — on mobile the player must come first. The curriculum is
+                  first in the DOM (so it renders on the left on desktop), which
+                  meant phone users scrolled past every lesson to reach the
+                  video. order-* flips that below the lg breakpoint without
+                  moving any markup. */}
               <div
-                className="col-lg-4 border-end"
+                className="col-lg-4 border-end order-2 order-lg-1"
                 style={{ maxHeight: "calc(100vh - 80px)" }}
               >
                 <div className="progress-overview-section">
@@ -239,6 +311,43 @@ const CourseWatch = () => {
                       }}
                     />
                   </div>
+
+                  {/* #33 LMS Guide — sits ABOVE the curriculum and is not a
+                      module or lesson. Hidden entirely when no guide video is
+                      configured for this course. */}
+                  {currentCourse?.course?.lmsGuideVdoId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGuideOpen(true);
+                        setGuideSegments([]);
+                        setGuideDuration(0);
+                        scrollToPlayer();
+                      }}
+                      className={`w-100 text-start border rounded p-3 mb-3 lms-guide-card ${
+                        guideOpen ? "border-primary bg-primary-transparent" : ""
+                      }`}
+                    >
+                      <div className="d-flex align-items-center">
+                        <i className="isax isax-book5 text-primary fs-24 me-2" />
+                        <div className="flex-grow-1">
+                          <div className="fw-semibold">
+                            {currentCourse.course.lmsGuideTitle ||
+                              "How to use this LMS"}
+                          </div>
+                          <div
+                            className="text-muted"
+                            style={{ fontSize: 12.5 }}
+                          >
+                            Watch first &middot; does not affect your progress
+                          </div>
+                        </div>
+                        {guideOpen && (
+                          <span className="badge bg-primary ms-2">Playing</span>
+                        )}
+                      </div>
+                    </button>
+                  )}
 
                   {/* Curriculum Accordion */}
                   <div
@@ -296,6 +405,13 @@ const CourseWatch = () => {
                                     onClick={async (e) => {
                                       e.preventDefault();
 
+                                      // Leaving the LMS Guide, if it was open.
+                                      setGuideOpen(false);
+                                      // #39.5 — bring the player back into view
+                                      // on mobile, even for a re-tap of the
+                                      // lesson already playing.
+                                      scrollToPlayer();
+
                                       // Skip if already playing this lesson
                                       if (activeLesson === lessonItem._id)
                                         return;
@@ -334,15 +450,48 @@ const CourseWatch = () => {
                                     }}
                                   >
                                     <div className="d-flex align-items-center">
-                                      <span className="d-flex">
-                                        <i
-                                          className={`isax ${
-                                            isActive
-                                              ? "isax-pause-circle5 text-primary"
-                                              : "isax-play-circle5 text-success"
-                                          } fs-24 me-1`}
-                                        />
-                                      </span>
+                                      {(() => {
+                                        const pct =
+                                          lessonProgress[lessonItem._id] ?? 0;
+                                        return (
+                                          <span
+                                            className="d-inline-flex align-items-center justify-content-center rounded-circle me-2 flex-shrink-0 position-relative"
+                                            style={{
+                                              width: 28,
+                                              height: 28,
+                                              background:
+                                                pct > 0
+                                                  ? `conic-gradient(var(--bs-success, #28a745) ${pct}%, #e9ecef ${pct}%)`
+                                                  : "#e9ecef",
+                                            }}
+                                            title={`${pct}% watched`}
+                                          >
+                                            <span
+                                              className="rounded-circle bg-white d-flex align-items-center justify-content-center"
+                                              style={{
+                                                width: 20,
+                                                height: 20,
+                                                fontSize: 9,
+                                              }}
+                                            >
+                                              {isActive ? (
+                                                <i
+                                                  className={`isax ${
+                                                    isActive
+                                                      ? "isax-pause-circle5 text-primary"
+                                                      : "isax-play-circle5 text-success"
+                                                  }`}
+                                                  style={{ fontSize: 14 }}
+                                                />
+                                              ) : (
+                                                <span className="text-muted">
+                                                  {pct}%
+                                                </span>
+                                              )}
+                                            </span>
+                                          </span>
+                                        );
+                                      })()}
                                       <p
                                         className={`accordian-content mb-0 ${
                                           isActive
@@ -371,9 +520,43 @@ const CourseWatch = () => {
               </div>
 
               {/* ========== RIGHT SIDE: Video Player + Tabs ========== */}
-              <div className="col-lg-8">
-                <div className="course-watch-content">
-                  {showVideo ? (
+              <div className="col-lg-8 order-1 order-lg-2">
+                <div className="course-watch-content" ref={playerRef}>
+                  {guideOpen && currentCourse?.course?.lmsGuideVdoId ? (
+                    <div className="mb-4">
+                      <VdoPlayer
+                        key={`guide-${currentCourse.course.lmsGuideVdoId}`}
+                        vdoId={currentCourse.course.lmsGuideVdoId}
+                        courseId={id}
+                        setWatchedSegments={setGuideSegments}
+                        watchedSegments={guideSegments}
+                        duration={guideDuration}
+                        setDuration={setGuideDuration}
+                        // Informational content — always freely seekable, and
+                        // never gated behind the first-watch completion rule.
+                        completed
+                      />
+                      <div className="mt-3">
+                        <span className="badge bg-primary-transparent text-primary mb-2">
+                          LMS Guide
+                        </span>
+                        <h5 className="mb-2">
+                          {currentCourse.course.lmsGuideTitle ||
+                            "How to use this LMS"}
+                        </h5>
+                        {currentCourse.course.lmsGuideDescription && (
+                          <p className="text-muted mb-2">
+                            {currentCourse.course.lmsGuideDescription}
+                          </p>
+                        )}
+                        <p className="text-muted mb-0" style={{ fontSize: 13 }}>
+                          This guide is not part of the course curriculum and is
+                          not counted in your progress. Pick any lesson from the
+                          curriculum to start learning.
+                        </p>
+                      </div>
+                    </div>
+                  ) : showVideo ? (
                     <div className="mb-4">
                       {lesson?.vdoId ? (
                         <VdoPlayer
@@ -422,9 +605,12 @@ const CourseWatch = () => {
                     </div>
                   )}
 
-                  {/* Tabs */}
+                  {/* Tabs — hidden while the LMS Guide is playing, since the
+                      lesson tabs below belong to a lesson, not the guide. */}
                   <ul
-                    className="nav-tabs mb-4 nav-justified border-0 nav-style-1 d-sm-flex d-block"
+                    className={`nav-tabs mb-4 nav-justified border-0 nav-style-1 d-sm-flex d-block${
+                      guideOpen ? " d-none" : ""
+                    }`}
                     role="tablist"
                   >
                     <li className="nav-item active">
@@ -443,10 +629,10 @@ const CourseWatch = () => {
                         className="btn nav-link"
                         data-bs-toggle="tab"
                         role="tab"
-                        to="#notes"
+                        to="#resources"
                         aria-selected="false"
                       >
-                        Notes
+                        Resources
                       </Link>
                     </li>
                     <li className="nav-item">
@@ -460,8 +646,19 @@ const CourseWatch = () => {
                         Assignments
                       </Link>
                     </li>
+                    <li className="nav-item">
+                      <Link
+                        className="btn nav-link"
+                        data-bs-toggle="tab"
+                        role="tab"
+                        to="#quiz"
+                        aria-selected="false"
+                      >
+                        Quiz
+                      </Link>
+                    </li>
                   </ul>
-                  <div className="tab-content">
+                  <div className={`tab-content${guideOpen ? " d-none" : ""}`}>
                     <div
                       className="tab-pane active show"
                       id="overview"
@@ -499,14 +696,48 @@ const CourseWatch = () => {
                         </div>
                       )}
                     </div>
-                    <div className="tab-pane" id="notes" role="tabpanel">
+                    <div className="tab-pane" id="resources" role="tabpanel">
                       <div className="mb-0">
-                        <h6 className="fs-18 fw-semibold mb-1">Notes</h6>
-                        <div
-                          dangerouslySetInnerHTML={{
-                            __html: currentCourse?.course.notes,
-                          }}
-                        />
+                        <h6 className="fs-18 fw-semibold mb-2">
+                          {showVideo && lesson?.name
+                            ? `Resources for "${lesson.name}"`
+                            : "Resources"}
+                        </h6>
+                        {!showVideo ? (
+                          <p className="text-muted mb-0">
+                            Select a lesson to see its resources.
+                          </p>
+                        ) : !lesson?.resources?.length ? (
+                          <p className="text-muted mb-0">
+                            No resources added for this lesson yet.
+                          </p>
+                        ) : (
+                          <ul className="list-unstyled">
+                            {lesson.resources.map((r: any, ri: number) => (
+                              <li
+                                key={ri}
+                                className="d-flex align-items-start mb-3"
+                              >
+                                <i className="isax isax-link-21 me-2 mt-1 text-secondary" />
+                                <div>
+                                  <a
+                                    href={r.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="fw-semibold"
+                                  >
+                                    {r.title || r.link}
+                                  </a>
+                                  {r.description && (
+                                    <p className="mb-0 text-muted small">
+                                      {r.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
                     </div>
                     <div className="tab-pane" id="faq" role="tabpanel">
@@ -561,36 +792,89 @@ const CourseWatch = () => {
                                         <p>{assign.instructions}</p>
                                       </div>
 
-                                      <div className="d-flex justify-content-between">
-                                        <div>
-                                          <h6 className="fs-18 fw-semibold mb-2">
-                                            Due Date
-                                          </h6>
-                                          <p
-                                            className={`mb-0 ${textClass} fw-bold`}
-                                          >
-                                            {moment(assign.lastDate).format(
-                                              "DD MMM YYYY"
+                                      {(() => {
+                                        const mySubmission =
+                                          currentCourse?.progress?.assignments?.find(
+                                            (a: any) =>
+                                              a.assignmentsID === assign._id
+                                          );
+                                        const status =
+                                          mySubmission?.status || "Pending";
+                                        const canSubmit =
+                                          status === "Pending" ||
+                                          status === "Needs Revision";
+                                        const badgeClass =
+                                          {
+                                            Pending: "bg-light text-dark",
+                                            "Under Review": "bg-warning",
+                                            Reviewed: "bg-info",
+                                            "Needs Revision": "bg-danger",
+                                            Completed: "bg-success",
+                                          }[status] || "bg-light text-dark";
+                                        return (
+                                          <>
+                                            <div className="mb-3">
+                                              <span
+                                                className={`badge ${badgeClass}`}
+                                              >
+                                                {status}
+                                              </span>
+                                            </div>
+                                            {mySubmission?.feedback && (
+                                              <div className="mb-3 p-3 bg-light rounded">
+                                                <p className="fw-semibold mb-1">
+                                                  Instructor Feedback
+                                                </p>
+                                                <p className="mb-0">
+                                                  {mySubmission.feedback}
+                                                </p>
+                                                {mySubmission.marks !=
+                                                  null && (
+                                                  <p className="mb-0 fw-semibold mt-1">
+                                                    Marks: {mySubmission.marks}
+                                                  </p>
+                                                )}
+                                              </div>
                                             )}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <button
-                                            className="btn btn-secondary d-flex align-items-center"
-                                            onClick={() => {
-                                              setOpenedAssignId(assign._id);
-                                            }}
-                                          >
-                                            <i className="isax isax-add-circle me-1" />
-                                            Add Assignments
-                                          </button>
-                                        </div>
-                                      </div>
+                                            <div className="d-flex justify-content-between">
+                                              <div>
+                                                <h6 className="fs-18 fw-semibold mb-2">
+                                                  Due Date
+                                                </h6>
+                                                <p
+                                                  className={`mb-0 ${textClass} fw-bold`}
+                                                >
+                                                  {moment(
+                                                    assign.lastDate
+                                                  ).format("DD MMM YYYY")}
+                                                </p>
+                                              </div>
+                                              {canSubmit && (
+                                                <div>
+                                                  <button
+                                                    className="btn btn-secondary d-flex align-items-center"
+                                                    onClick={() => {
+                                                      setOpenedAssignId(
+                                                        assign._id
+                                                      );
+                                                    }}
+                                                  >
+                                                    <i className="isax isax-add-circle me-1" />
+                                                    {status === "Needs Revision"
+                                                      ? "Resubmit Assignment"
+                                                      : "Fill Assignment"}
+                                                  </button>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </>
+                                        );
+                                      })()}
 
                                       {openedAssignId === assign._id && (
                                         <div className="mt-4 shadow border border-muted p-4 pt-2 rounded">
                                           <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                                            <h6>Add Assignment</h6>
+                                            <h6>Fill Assignment</h6>
                                             <span
                                               role="button"
                                               style={{
@@ -608,7 +892,7 @@ const CourseWatch = () => {
                                             value={
                                               submissionText[assign._id] || ""
                                             }
-                                            placeholder="Enter assignment details"
+                                            placeholder="Enter your written answer"
                                             onChange={(e) =>
                                               setSubmissionText({
                                                 ...submissionText,
@@ -616,6 +900,72 @@ const CourseWatch = () => {
                                               })
                                             }
                                           />
+                                          <div className="mt-3">
+                                            <label className="form-label">
+                                              Links{" "}
+                                              <small className="text-muted">
+                                                (optional — one per line)
+                                              </small>
+                                            </label>
+                                            <textarea
+                                              className="form-control"
+                                              rows={2}
+                                              placeholder="https://..."
+                                              value={
+                                                submissionLinks[assign._id] ||
+                                                ""
+                                              }
+                                              onChange={(e) =>
+                                                setSubmissionLinks({
+                                                  ...submissionLinks,
+                                                  [assign._id]: e.target.value,
+                                                })
+                                              }
+                                            />
+                                          </div>
+                                          <div className="mt-3">
+                                            <label className="form-label">
+                                              Attachment{" "}
+                                              <small className="text-muted">
+                                                (optional - PDF, DOC, image or
+                                                ZIP, up to 20 MB)
+                                              </small>
+                                            </label>
+                                            <input
+                                              type="file"
+                                              className="form-control"
+                                              onChange={(e) => {
+                                                const f =
+                                                  e.target.files?.[0] || null;
+                                                if (
+                                                  f &&
+                                                  f.size > 20 * 1024 * 1024
+                                                ) {
+                                                  // Checked here as well as on
+                                                  // the server so the student
+                                                  // is told before sitting
+                                                  // through the whole upload.
+                                                  toast.error(
+                                                    "That file is larger than 20 MB."
+                                                  );
+                                                  e.target.value = "";
+                                                  return;
+                                                }
+                                                setSubmissionFiles({
+                                                  ...submissionFiles,
+                                                  [assign._id]: f,
+                                                });
+                                              }}
+                                            />
+                                            {submissionFiles[assign._id] && (
+                                              <small className="text-muted d-block mt-1">
+                                                {
+                                                  submissionFiles[assign._id]
+                                                    .name
+                                                }
+                                              </small>
+                                            )}
+                                          </div>
                                           <div className="d-flex justify-content-end">
                                             <button
                                               className="btn btn-secondary mt-3"
@@ -630,13 +980,45 @@ const CourseWatch = () => {
                                                       submissionText[
                                                         assign._id
                                                       ] || "",
+                                                    links: (
+                                                      submissionLinks[
+                                                        assign._id
+                                                      ] || ""
+                                                    )
+                                                      .split("\n")
+                                                      .map((l) => l.trim())
+                                                      .filter(Boolean),
+                                                    file:
+                                                      submissionFiles[
+                                                        assign._id
+                                                      ] || null,
                                                   })
                                                 )
                                                   .unwrap()
                                                   .then(() => {
                                                     setOpenedAssignId(null);
+                                                    setSubmissionFiles(
+                                                      (prev: any) => ({
+                                                        ...prev,
+                                                        [assign._id]: null,
+                                                      })
+                                                    );
                                                     toast.success(
                                                       "Submitted successful!"
+                                                    );
+                                                    if (std && id) {
+                                                      dispatch(
+                                                        fetchStudentCourseDetail({
+                                                          studentId: std,
+                                                          courseId: id,
+                                                        }) as any
+                                                      );
+                                                    }
+                                                  })
+                                                  .catch((err: any) => {
+                                                    toast.error(
+                                                      err?.message ||
+                                                        "Submission failed."
                                                     );
                                                   });
                                               }}
@@ -656,6 +1038,45 @@ const CourseWatch = () => {
                           }
                         )}
                       </div>
+                    </div>
+                    <div className="tab-pane" id="quiz" role="tabpanel">
+                      {!showVideo ? (
+                        <p className="text-muted mb-0">
+                          Select a lesson to see its quiz.
+                        </p>
+                      ) : (
+                        (() => {
+                          const lessonQuizzes = quizzes.filter(
+                            (q) => q.lessonID === lesson?._id
+                          );
+                          if (!lessonQuizzes.length) {
+                            return (
+                              <p className="text-muted mb-0">
+                                No quiz for this lesson yet.
+                              </p>
+                            );
+                          }
+                          return lessonQuizzes.map((q) => (
+                            <div className="card mb-3" key={q._id}>
+                              <div className="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                  <h6 className="mb-1">{q.title}</h6>
+                                  <p className="mb-0 text-muted small">
+                                    {q.questions?.length ?? 0} Questions ·{" "}
+                                    {q.totalMarks} Marks
+                                  </p>
+                                </div>
+                                <Link
+                                  to={`${all_routes.studentQuizQuestion}?id=${q._id}`}
+                                  className="btn btn-secondary"
+                                >
+                                  Take Quiz
+                                </Link>
+                              </div>
+                            </div>
+                          ));
+                        })()
+                      )}
                     </div>
                   </div>
                 </div>

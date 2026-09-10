@@ -1,4 +1,4 @@
-﻿import { Navigate, Route } from "react-router";
+import { Navigate, Route } from "react-router";
 import ComingSoon from "../auth/coming-soon/comingSoon";
 import Error404 from "../auth/error/error-404/error400";
 import Error500 from "../auth/error/error-500/error500";
@@ -45,7 +45,6 @@ import InstructorIntegrations from "../Instructor/instructor-settings/instructor
 import InstructorLinkedAccounts from "../Instructor/instructor-settings/instructor-linked-accounts/instructorLinkedAccounts";
 import InstructorNotification from "../Instructor/instructor-settings/instructor-notification/instructorNotification";
 import InstructorPlanSettings from "../Instructor/instructor-settings/instructor-plans-settings/instructorPlanSettings";
-import InstructorShop from "../Instructor/instructor-shop/instructorShop";
 import InstructorSocialprofileSettings from "../Instructor/instructor-settings/instructor-socialprofile-settings/instructorSocialprofileSettings";
 import InstructorWithdraw from "../Instructor/instructor-settings/instructor-withdraw/instructorWithdraw";
 import InstructorStatement from "../Instructor/instructor-statement/instructorStatement";
@@ -53,6 +52,17 @@ import InstructorTickets from "../Instructor/instructor-tickets/instructorTicket
 import StudentGrid from "../Instructor/student-grid/studentGrid";
 import StudentList from "../Instructor/student-list/studentList";
 import AboutUs from "../Pages/about-us/aboutUs";
+import SuccessStories from "../Pages/success-stories/successStories";
+import InstructorSuccessStories from "../Instructor/instructor-success-stories/instructorSuccessStories";
+import InstructorShop from "../Instructor/instructor-shop/instructorShop";
+import InstructorShopOrders from "../Instructor/instructor-shop-orders/instructorShopOrders";
+import MyProducts from "../student/student-products/myProducts";
+import OrderVerification from "../Pages/shop-order/orderVerification";
+import LegacyRedirect from "./LegacyRedirect";
+import Enroll from "../Pages/enroll/enroll";
+import EnrollStatus from "../Pages/enroll/enrollStatus";
+import InstructorEnrollments from "../Instructor/instructor-enrollments/instructorEnrollments";
+import StudentEnrollments from "../student/student-enrollments/studentEnrollments";
 import Services from "../Pages/services/services";
 import BecomeInstructor from "../Pages/become-instructor/becomeInstructor";
 import ContactUs from "../Pages/contact-us/contactUs";
@@ -76,7 +86,6 @@ import StudentCertificates from "../student/student-certificates/student-certifi
 import StudentCourseResume from "../student/student-course-resume/student-course-resume";
 import StudentCourse from "../student/student-course/studentCourse";
 import StudentMessage from "../student/student-message/studentMessage";
-import StudentOrder from "../student/student-order-history/studentOrder";
 import StudentProfile from "../student/student-profile/studentProfile";
 import StudentQuizQuestion from "../student/student-quiz-question/studentQuizQuestion";
 import StudentQuiz from "../student/student-quiz/studentQuiz";
@@ -153,7 +162,9 @@ export const publicRoutes = [
   {
     path: "/",
     name: "Root",
-    element: <Navigate to="/index" />,
+    // Points at the constant, not a literal: with "/index" hardcoded here the
+    // root would bounce through the legacy redirect on every visit.
+    element: <Navigate to={routes.homeone} replace />,
     route: Route,
   },
   {
@@ -233,6 +244,11 @@ export const publicRoutes = [
     route: Route,
   },
   {
+    path: routes.shopOrderVerification,
+    element: <OrderVerification />,
+    route: Route,
+  },
+  {
     path: routes.services,
     element: <Services />,
     route: Route,
@@ -240,6 +256,30 @@ export const publicRoutes = [
   {
     path: routes.about_us,
     element: <AboutUs />,
+    route: Route,
+  },
+  {
+    path: routes.successStories,
+    element: <SuccessStories />,
+    route: Route,
+  },
+  // #48 — readable course URL, e.g. /courses/tiktok-automation. Declared after
+  // /courses and /courses/list so those exact paths win over the :slug match.
+  {
+    path: "/courses/:slug",
+    element: <CourseDetails />,
+    route: Route,
+  },
+  // #47 — public so a visitor can start enrolling before signing up; the
+  // security gate is that access is only granted on admin approval.
+  {
+    path: routes.enroll,
+    element: <Enroll />,
+    route: Route,
+  },
+  {
+    path: routes.enrollStatus,
+    element: <EnrollStatus />,
     route: Route,
   },
   {
@@ -277,6 +317,43 @@ export const publicRoutes = [
     element: <PrivacyPolicy />,
     route: Route,
   },
+
+  // #48 — legacy paths kept alive as permanent redirects to the clean URLs, so
+  // links already shared, indexed or bookmarked don't start 404ing. `replace`
+  // keeps the old path out of the back-button history.
+  ...[
+    ["/index", routes.homeone],
+    ["/course/course-grid", routes.courseGrid],
+    ["/course/course-list", routes.courseList],
+    ["/course/course-details", routes.courseDetails],
+    ["/pages/about-us", routes.about_us],
+    ["/pages/services", routes.services],
+    ["/pages/success-stories", routes.successStories],
+    ["/pages/contact-us", routes.contactUs],
+    ["/pages/privacy-policy", routes.privacyPolicy],
+    ["/terms-conditions", routes.termsConditions],
+    // Student dashboard pages (#48). These sit behind login, but a stale
+    // bookmark or an old email link must still land somewhere sensible.
+    ["/student/student-dashboard", routes.studentDashboard],
+    ["/student/student-profile", routes.studentProfile],
+    ["/student/student-courses", routes.studentCourses],
+    ["/student/student-course-resume", routes.studentCourseResume],
+    ["/student/student-messages", routes.studentMessage],
+    ["/student/student-certificates", routes.studentCertificates],
+    ["/student/student-wishlist", routes.studentWishlist],
+    ["/student/student-quiz", routes.studentQuiz],
+    ["/student/student-quiz-questions", routes.studentQuizQuestion],
+    ["/student/student-tickets", routes.studentTickets],
+    ["/student/student-order-history", routes.studentMyProducts],
+    ["/student/my-enrollments", routes.myEnrollments],
+  ].map(([from, to]) => ({
+    path: from,
+    // Query strings (?id=…) are preserved so an old course-details link still
+    // lands on the right course.
+    element: <LegacyRedirect to={to} />,
+    route: Route,
+  })),
+
   // IMPORTANT: All Instructor and Student routes removed
 ];
 
@@ -346,6 +423,31 @@ export const protectedRoutes = [
     route: Route,
   },
   {
+    path: routes.instructorSuccessStories,
+    element: <InstructorSuccessStories />,
+    route: Route,
+  },
+  {
+    path: routes.instructorShopOrders,
+    element: <InstructorShopOrders />,
+    route: Route,
+  },
+  {
+    path: routes.instructorShop,
+    element: <InstructorShop />,
+    route: Route,
+  },
+  {
+    path: routes.instructorEnrollments,
+    element: <InstructorEnrollments />,
+    route: Route,
+  },
+  {
+    path: routes.myEnrollments,
+    element: <StudentEnrollments />,
+    route: Route,
+  },
+  {
     path: routes.instructorAssignment,
     element: <InstructorAssignment />,
     route: Route,
@@ -393,11 +495,6 @@ export const protectedRoutes = [
   {
     path: routes.instructorChangePassword,
     element: <InstructorChangePassoword />,
-    route: Route,
-  },
-  {
-    path: routes.instructorShop,
-    element: <InstructorShop />,
     route: Route,
   },
   {
@@ -523,8 +620,16 @@ export const protectedRoutes = [
     route: Route,
   },
   {
+    path: routes.studentMyProducts,
+    element: <MyProducts />,
+    route: Route,
+  },
+  {
+    // Superseded by My Products. Kept pointing at the same screen rather than
+    // the template's invented-rows page, so an old bookmark lands on the
+    // student's real orders instead of fictional ones.
     path: routes.studentOrderHistory,
-    element: <StudentOrder />,
+    element: <MyProducts />,
     route: Route,
   },
   {

@@ -21,10 +21,14 @@ import type { AppDispatch } from "../../../core/redux/store";
 import { all_routes } from "../../router/all_routes";
 import InstructorSidebar from "../common/instructorSidebar";
 import ProfileCard from "../common/profileCard";
+import StudentQuizSubmissionModule from "./StudentQuizSubmissionModule";
 
 // Types for the quiz form (Formik)
 type QuizFormType = {
   courseID: string;
+  // Optional — scopes the quiz to one lesson for the Course Watch Quiz tab
+  // (#29). Left blank, the quiz stays course-wide (e.g. a final exam).
+  lessonID: string;
   title: string;
   totalMarks: string;
   passMark: string;
@@ -34,6 +38,7 @@ type QuizFormType = {
 
 const quizInitialValues: QuizFormType = {
   courseID: "",
+  lessonID: "",
   title: "",
   totalMarks: "",
   passMark: "",
@@ -91,6 +96,19 @@ const InstructorQuiz = () => {
     value: c._id,
   }));
 
+  // Flattened lesson list for the selected course, so a quiz can optionally
+  // be scoped to one lesson (#29's Quiz tab on Course Watch).
+  const getLessonOptions = (courseId: string) => {
+    const course = courses.find((c: any) => c._id === courseId);
+    const options: { label: string; value: string }[] = [];
+    (course?.curriculum || []).forEach((topic: any) => {
+      (topic.lessons || []).forEach((lesson: any) => {
+        options.push({ label: lesson.name, value: lesson._id });
+      });
+    });
+    return options;
+  };
+
   useEffect(() => {
     if (searchText) {
       dispatch(searchQuizzes({ search: searchText }) as any);
@@ -124,6 +142,7 @@ const InstructorQuiz = () => {
   ) => {
     const quizData = {
       courseID: values.courseID,
+      lessonID: values.lessonID,
       title: values.title,
       totalMarks: Number(values.totalMarks),
       passMark: Number(values.passMark),
@@ -157,6 +176,7 @@ const InstructorQuiz = () => {
     if (!editId) return;
     const quizData = {
       courseID: values.courseID,
+      lessonID: values.lessonID,
       title: values.title,
       totalMarks: Number(values.totalMarks),
       passMark: Number(values.passMark),
@@ -190,6 +210,7 @@ const InstructorQuiz = () => {
     setEditId(quiz._id);
     setDefaultEditValues({
       courseID: quiz.courseID || "",
+      lessonID: quiz.lessonID || "",
       title: quiz.title || "",
       totalMarks: quiz.totalMarks?.toString() || "",
       passMark: quiz.passMark?.toString() || "",
@@ -311,36 +332,73 @@ const InstructorQuiz = () => {
             <div className="col-12 col-lg-9">
               <div className="page-title d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
                 <h5 className="fw-bold">Quiz</h5>
-                <div className="d-flex flex-wrap gap-2 align-items-center justify-content-end">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search by quiz title"
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    style={{
-                      maxWidth: "260px",
-                      minWidth: "140px",
-                      flex: "1 0 140px",
-                    }}
-                  />
+              </div>
+              {/* #34: Student Submissions tab, mirroring the Assignments page */}
+              <ul
+                className="nav-tabs mb-4 nav-justified border-0 nav-style-1 d-sm-flex d-block"
+                role="tablist"
+              >
+                <li className="nav-item active">
                   <Link
-                    to="#"
-                    className="btn btn-secondary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#add_quiz"
+                    className="btn nav-link active"
+                    data-bs-toggle="tab"
+                    role="tab"
+                    to="#my-quizzes"
+                    aria-selected="false"
+                    style={{ width: "160px" }}
                   >
-                    Add Quiz
+                    My Quizzes
                   </Link>
+                </li>
+                <li className="nav-item">
+                  <Link
+                    className="btn nav-link"
+                    data-bs-toggle="tab"
+                    role="tab"
+                    to="#quiz-submissions"
+                    aria-selected="true"
+                    style={{ width: "190px" }}
+                  >
+                    Student Submissions
+                  </Link>
+                </li>
+              </ul>
+              <div className="tab-content">
+                <div className="tab-pane active show" id="my-quizzes" role="tabpanel">
+                  <div className="d-flex flex-wrap gap-2 align-items-center justify-content-end mb-3">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search by quiz title"
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      style={{
+                        maxWidth: "260px",
+                        minWidth: "140px",
+                        flex: "1 0 140px",
+                      }}
+                    />
+                    <Link
+                      to="#"
+                      className="btn btn-secondary"
+                      data-bs-toggle="modal"
+                      data-bs-target="#add_quiz"
+                    >
+                      Add Quiz
+                    </Link>
+                  </div>
+                  {loading ? (
+                    <div className="py-5 text-center">
+                      <span className="spinner-border"></span>
+                    </div>
+                  ) : (
+                    renderQuizList()
+                  )}
+                </div>
+                <div className="tab-pane" id="quiz-submissions" role="tabpanel">
+                  <StudentQuizSubmissionModule />
                 </div>
               </div>
-              {loading ? (
-                <div className="py-5 text-center">
-                  <span className="spinner-border"></span>
-                </div>
-              ) : (
-                renderQuizList()
-              )}
             </div>
           </div>
         </div>
@@ -388,6 +446,29 @@ const InstructorQuiz = () => {
                         component="div"
                         className="text-danger"
                       />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">
+                        Lesson{" "}
+                        <small className="text-muted">
+                          (optional — leave blank for a course-wide quiz)
+                        </small>
+                      </label>
+                      <select
+                        className="form-select"
+                        value={values.lessonID}
+                        disabled={!values.courseID}
+                        onChange={(e) =>
+                          setFieldValue("lessonID", e.target.value)
+                        }
+                      >
+                        <option value="">Course-wide (no lesson)</option>
+                        {getLessonOptions(values.courseID).map((opt) => (
+                          <option value={opt.value} key={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="row">
                       <div className="col-12 col-md-6">
@@ -543,6 +624,29 @@ const InstructorQuiz = () => {
                         component="div"
                         className="text-danger"
                       />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">
+                        Lesson{" "}
+                        <small className="text-muted">
+                          (optional — leave blank for a course-wide quiz)
+                        </small>
+                      </label>
+                      <select
+                        className="form-select"
+                        value={values.lessonID}
+                        disabled={!values.courseID}
+                        onChange={(e) =>
+                          setFieldValue("lessonID", e.target.value)
+                        }
+                      >
+                        <option value="">Course-wide (no lesson)</option>
+                        {getLessonOptions(values.courseID).map((opt) => (
+                          <option value={opt.value} key={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="row">
                       <div className="col-12 col-md-6">

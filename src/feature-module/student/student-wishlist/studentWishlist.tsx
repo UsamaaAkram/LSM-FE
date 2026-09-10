@@ -8,6 +8,7 @@ import { fetchStudentWishlistCourses } from "../../../core/redux/studentWishlist
 import type { AppDispatch, RootState } from "../../../core/redux/store";
 import ImageGlobal from "../../../core/common/ImageGlobal/ImageGlobal";
 import ProfileCard from "../common/profileCard";
+import { courseUrl } from "../../../core/common/courseLink";
 
 const StudentWishlist = () => {
   const route = all_routes;
@@ -66,7 +67,7 @@ const StudentWishlist = () => {
                         <div className="position-relative overflow-hidden rounded-3">
                           <div className="course-img">
                             <Link
-                              to={`${route.courseDetails}?id=${course._id}`}
+                              to={courseUrl(course)}
                             >
                               <ImageGlobal
                                 src={course?.courseThumbnailUrl ?? ""}
@@ -94,14 +95,14 @@ const StudentWishlist = () => {
                           </span>
                         </div>
                         <h6 className="mt-3 mb-2 text-truncate">
-                          <Link to={`${route.courseDetails}?id=${course._id}`}>
+                          <Link to={courseUrl(course)}>
                             {course.courseTitle}
                           </Link>
                         </h6>
                         <div className="d-flex align-items-center justify-content-between">
                           <h5 className="text-secondary mb-0"></h5>
                           <Link
-                            to={`${route.courseDetails}?id=${course._id}`}
+                            to={courseUrl(course)}
                             className="btn btn-secondary btn-sm d-inline-flex align-items-center mt-2 mb-1"
                           >
                             View Course{" "}

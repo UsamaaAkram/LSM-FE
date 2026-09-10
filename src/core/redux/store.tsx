@@ -1,4 +1,4 @@
-﻿import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import sidebarReducer from "./sidebarSlice";
 import themeSettingReducer from "./themeSettingSlice";
 import authReducer from "./authSlice";
@@ -13,8 +13,14 @@ import userReducer from "./chatUserSlice";
 import studentCoursesReducer from "./studentCoursesSlice";
 import studentWishlistReducer from "./studentWishlistSlice";
 import studentSubmissionReducer from './studentSubmissionSlice';
+import studentQuizSubmissionReducer from './studentQuizSubmissionSlice';
+import successStoryReducer from './successStorySlice';
 import productReducer from './productSlice';
 import orderReducer from './orderSlice';
+import enrollmentReducer from './enrollmentSlice';
+import communityReducer from './communitySlice';
+import notificationReducer from './notificationSlice';
+import announcementReducer from './announcementSlice';
 import studentLessonWatchedReducer from './studentLessonWatchedSlice';
 import studentDashboardSlice from "./studentDashboardSlice";
 import studentCertificatesSlice from "./studentCertificatesSlice";
@@ -47,8 +53,14 @@ const rootReducer = combineReducers({
   studentCourses: studentCoursesReducer,
   studentWishlist: studentWishlistReducer,
   studentSubmission: studentSubmissionReducer,
+  studentQuizSubmission: studentQuizSubmissionReducer,
+  successStory: successStoryReducer,
   product: productReducer,
   order: orderReducer,
+  enrollment: enrollmentReducer,
+  community: communityReducer,
+  notifications: notificationReducer,
+  announcements: announcementReducer,
   lessonWatched: studentLessonWatchedReducer,
   studentDashboard: studentDashboardSlice, // Add the studentDashboard slice here
   studentCertificates: studentCertificatesSlice, // Add the studentCertificates slice here

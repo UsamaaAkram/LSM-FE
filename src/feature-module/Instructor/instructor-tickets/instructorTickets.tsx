@@ -1,4 +1,3 @@
-import moment from "moment";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -22,6 +21,7 @@ import {
 import InstructorSidebar from "../common/instructorSidebar";
 import ProfileCard from "../common/profileCard";
 import TicketModal from "../../../core/common/ticketModal/TicketModal";
+import TicketReplyThread from "../../../core/common/ticketModal/TicketReplyThread";
 
 type OptionType = { label: string; value: string | number };
 
@@ -144,6 +144,8 @@ const InstructorTickets = () => {
       Description: values.Description,
       Attachments: values.Attachments,
       createdBy: currentUser?._id,
+      createdByName: currentUser?.userName || currentUser?.name || "",
+      createdByEmail: currentUser?.email || "",
       Date: new Date().toLocaleDateString(),
     };
 
@@ -206,8 +208,13 @@ const InstructorTickets = () => {
       email: currentUser?.email,
       userName:
         currentUser?.userName ?? currentUser?.name ?? currentUser?.email,
+      name: currentUser?.name ?? "",
       message: replyText,
-      date: new Date().toLocaleString(),
+      // Server stamps the authoritative ISO timestamp on insert.
+      date: new Date().toISOString(),
+      // Drives the "Instructor"/"Admin" label on the reply, and tells the
+      // server this is a staff reply (moves an untouched ticket to Inprogress).
+      role: currentUser?.role ?? "instructor",
     };
 
     try {
@@ -220,7 +227,10 @@ const InstructorTickets = () => {
         setSelectedTicketIdx({ ...updatedTicket });
         fetchAllTickets();
       } else {
-        toast.error("Error adding reply. Please try again.");
+        toast.error(
+          (resultAction.payload as string) ||
+            "Error adding reply. Please try again."
+        );
       }
     } catch (error: any) {
       toast.error(error?.message || "Unexpected error adding reply.");
@@ -308,6 +318,20 @@ const InstructorTickets = () => {
       title: "Date",
       dataIndex: "Date",
       sorter: (a: any, b: any) => a.Date.length - b.Date.length,
+    },
+    {
+      // Staff had no way to see who a ticket was from (#41's
+      // "shows student info to staff").
+      title: "Submitted By",
+      dataIndex: "createdByName",
+      render: (_: any, record: any) => (
+        <div>
+          <span className="d-block">{record.createdByName || "—"}</span>
+          {record.createdByEmail && (
+            <small className="text-muted">{record.createdByEmail}</small>
+          )}
+        </div>
+      ),
     },
     {
       title: "Subject",
@@ -565,51 +589,13 @@ const InstructorTickets = () => {
               <div className="mt-3">
                 <h6 className="mb-3">Replies</h6>
                 <div>
-                  {selectedTicketIdx !== null &&
-                  selectedTicketIdx?.Replies?.length
-                    ? selectedTicketIdx.Replies!.map(
-                        (reply: any, idx: number) => (
-                          <div
-                            key={idx}
-                            className="mb-3 py-2 px-3  border rounded-3"
-                          >
-                            <div className="d-flex justify-content-between align-items-start">
-                              <div>
-                                <h6 className="fs-16 fw-medium mb-0 d-flex align-items-center">
-                                  <strong>{reply.userName ?? ""}</strong>
-                                </h6>
-                                <p className="fs-10 text-muted">
-                                  {reply.email}
-                                </p>
-                              </div>
-                              <span className="fs-10 text-muted">
-                                {moment(
-                                  reply.date,
-                                  "DD/MM/YYYY, HH:mm:ss"
-                                ).format("D MMMM YYYY [at] HH:mm")}
-                              </span>
-                            </div>
-                            <div className="mt-2">{reply.message}</div>
-                          </div>
-                        )
-                      )
-                    : null}
-                  <form onSubmit={handleAddReply}>
-                    <textarea
-                      className="form-control mb-2"
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="Write your reply"
-                      rows={2}
-                      required
-                    />
-                    <button
-                      className="btn btn-secondary btn-sm rounded-pill"
-                      type="submit"
-                    >
-                      Add Reply
-                    </button>
-                  </form>
+                  <TicketReplyThread
+                    replies={selectedTicketIdx?.Replies}
+                    status={selectedTicketIdx?.Status}
+                    replyText={replyText}
+                    onReplyTextChange={setReplyText}
+                    onSubmit={handleAddReply}
+                  />
                 </div>
               </div>
             </div>

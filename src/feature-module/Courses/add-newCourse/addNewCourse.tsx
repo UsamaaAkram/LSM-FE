@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -10,8 +9,11 @@ import CustomSelect from "../../../core/common/commonSelect";
 import { CourseLevel } from "../../../core/common/selectOption/json/selectOption";
 import { createCourse } from "../../../core/redux/courses"; // <- adjust path as needed
 import { all_routes } from "../../router/all_routes";
+import LmsGuideFields from "../LmsGuideFields";
+import type { LmsGuideValues } from "../LmsGuideFields";
+import CoursePlansFields from "../CoursePlansFields";
+import type { CoursePlan } from "../CoursePlansFields";
 
-import { TimePicker } from "antd";
 import { useNavigate } from "react-router-dom";
 // Helper type for errors
 type ErrorState = { [key: string]: string };
@@ -29,6 +31,13 @@ const AddNewCourse: React.FC = () => {
   const [courseThumbnailUrl, setCourseThumbnailUrl] = useState("");
   const [price, setPrice] = useState<string>("");
   const [originalPrice, setOriginalPrice] = useState<string>("");
+  const [freeAccess, setFreeAccess] = useState<boolean>(false);
+  const [lmsGuide, setLmsGuide] = useState<LmsGuideValues>({
+    lmsGuideTitle: "",
+    lmsGuideDescription: "",
+    lmsGuideVdoId: "",
+  });
+  const [plans, setPlans] = useState<CoursePlan[]>([]);
   const [curriculum, setCurriculum] = useState<
     {
       topic: string;
@@ -41,18 +50,24 @@ const AddNewCourse: React.FC = () => {
     }[]
   >([]);
   const [currentTopic, setCurrentTopic] = useState("");
-  const [currentLesson, setCurrentLesson] = useState({
+  const [currentLesson, setCurrentLesson] = useState<{
+    name: string;
+    videoUrl: string;
+    vdoId: string;
+    description: string;
+    resources: { title: string; link: string; description: string }[];
+  }>({
     name: "",
     videoUrl: "",
     vdoId: "",
     description: "",
+    resources: [],
   });
   const [editTopicIdx, setEditTopicIdx] = useState<number | null>(null);
   const [editLessonIdx, setEditLessonIdx] = useState<{
     ti: number;
     li: number;
   } | null>(null);
-  const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<ErrorState>({});
   const route = all_routes;
 
@@ -147,7 +162,10 @@ const AddNewCourse: React.FC = () => {
   const openLessonModalForEdit = (ti: number, li: number) => {
     setSelectedTopicIndex(ti);
     setEditLessonIdx({ ti, li });
-    setCurrentLesson({ ...curriculum[ti].lessons[li] });
+    setCurrentLesson({
+      resources: [],
+      ...curriculum[ti].lessons[li],
+    });
     setShowLessonModal(true);
   };
   const handleAddLesson = (e?: React.FormEvent) => {
@@ -178,7 +196,7 @@ const AddNewCourse: React.FC = () => {
       );
       setCurriculum(newCurriculum);
     }
-    setCurrentLesson({ name: "", videoUrl: "", vdoId: "", description: "" });
+    setCurrentLesson({ name: "", videoUrl: "", vdoId: "", description: "", resources: [] });
     setShowLessonModal(false);
   };
   const handleDeleteLesson = (ti: number, li: number) => {
@@ -206,10 +224,12 @@ const AddNewCourse: React.FC = () => {
       courseDescription,
       courseThumbnail,
       courseThumbnailUrl: "",
-      price: Number(price) || 0,
-      originalPrice: Number(originalPrice) || 0,
+      price,
+      originalPrice,
+      freeAccess,
+      ...lmsGuide,
+      plans,
       curriculum,
-      notes,
       studentCount: 0,
       quizzesCount: 0,
       status: "pending",
@@ -235,11 +255,8 @@ const AddNewCourse: React.FC = () => {
       setErrors((prev) => ({ ...prev, courseDescription: "" }));
     setCourseDescription(e.target.value);
   }
-  function onNotesChange(e: any) {
-    setNotes(e.target.value);
-  }
 
-  
+
   return (
     <>
       <Breadcrumb title="Add New Course" />
@@ -257,7 +274,10 @@ const AddNewCourse: React.FC = () => {
                 <div className="add-course-item">
                   <div className="wizard">
                     <ul className="form-wizard-steps" id="progressbar2">
-                      {[1, 2, 3, 4].map((step) => (
+                      {/* Additional Information step removed (#2.5) — its
+                          Notes editor is redundant now that lesson-level
+                          Resources/Assignments/Quiz exist (#5.3). */}
+                      {[1, 2, 3].map((step) => (
                         <li
                           key={step}
                           className={
@@ -281,9 +301,7 @@ const AddNewCourse: React.FC = () => {
                                   ? "Course Information"
                                   : step === 2
                                   ? "Course Media"
-                                  : step === 3
-                                  ? "Curriculam"
-                                  : "Additional information"}
+                                  : "Curriculam"}
                               </p>
                             </div>
                           </div>
@@ -376,13 +394,13 @@ const AddNewCourse: React.FC = () => {
                           <div className="col-md-4">
                             <div className="input-block">
                               <label className="form-label">
-                                Price (Rs){" "}
+                                Price{" "}
                                 <small className="text-muted">(optional)</small>
                               </label>
                               <input
-                                type="number"
+                                type="text"
                                 className="form-control"
-                                placeholder="e.g. 15000"
+                                placeholder="e.g. Rs. 15,000 or Free or Contact Us"
                                 value={price}
                                 onChange={(e) => setPrice(e.target.value)}
                               />
@@ -391,15 +409,15 @@ const AddNewCourse: React.FC = () => {
                           <div className="col-md-4">
                             <div className="input-block">
                               <label className="form-label">
-                                Original Price (Rs){" "}
+                                Original Price{" "}
                                 <small className="text-muted">
                                   (crossed-out, optional)
                                 </small>
                               </label>
                               <input
-                                type="number"
+                                type="text"
                                 className="form-control"
-                                placeholder="e.g. 25000"
+                                placeholder="e.g. Rs. 25,000"
                                 value={originalPrice}
                                 onChange={(e) =>
                                   setOriginalPrice(e.target.value)
@@ -410,26 +428,46 @@ const AddNewCourse: React.FC = () => {
                           <div className="col-md-4">
                             <div className="input-block">
                               <label className="form-label">
+                                Free Access
+                              </label>
+                              <div className="form-check form-switch mt-2">
+                                <input
+                                  type="checkbox"
+                                  className="form-check-input"
+                                  id="freeAccessSwitch"
+                                  checked={freeAccess}
+                                  onChange={(e) =>
+                                    setFreeAccess(e.target.checked)
+                                  }
+                                />
+                                <label
+                                  className="form-check-label"
+                                  htmlFor="freeAccessSwitch"
+                                >
+                                  Anyone can watch without enrolling (demo/promo)
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="input-block">
+                              <label className="form-label">
                                 Course Duration{" "}
                                 <span className="text-danger ms-1">*</span>
                               </label>
-                              <TimePicker
-                                className="form-control timepicker"
-                                value={
-                                  duration ? dayjs(duration, "HH:mm:ss") : null
-                                }
-                                onChange={(val) => {
+                              <input
+                                type="text"
+                                className="form-control"
+                                value={duration}
+                                onChange={(e) => {
                                   if (errors.duration)
                                     setErrors((prev) => ({
                                       ...prev,
                                       duration: "",
                                     }));
-                                  setDuration(
-                                    val ? val.format("HH:mm:ss") : ""
-                                  );
+                                  setDuration(e.target.value);
                                 }}
-                                format="HH:mm:ss"
-                                placeholder="hh:mm:ss"
+                                placeholder="e.g. 45h 30m or 100+ Hours"
                               />
                               {errors.duration && (
                                 <div className="text-danger">
@@ -529,6 +567,13 @@ const AddNewCourse: React.FC = () => {
                             </div>
                           </div>
                         </div>
+                        <LmsGuideFields
+                          values={lmsGuide}
+                          onChange={(patch) =>
+                            setLmsGuide({ ...lmsGuide, ...patch })
+                          }
+                        />
+                        <CoursePlansFields plans={plans} onChange={setPlans} />
                         <div className="add-form-btn widget-next-btn submit-btn">
                           <div className="btn-left">
                             <Link
@@ -679,6 +724,7 @@ const AddNewCourse: React.FC = () => {
                                                 videoUrl: "",
                                                 vdoId: "",
                                                 description: "",
+                                                resources: [],
                                               });
                                               setShowLessonModal(true);
                                             }}
@@ -731,60 +777,9 @@ const AddNewCourse: React.FC = () => {
                             </Link>
                           </div>
                           <div className="btn-left">
-                            <Link
-                              to="#"
-                              className="btn btn-secondary main-btn next_btns"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleNext();
-                              }}
-                            >
-                              Next{" "}
-                              <i className="isax isax-arrow-right-3 ms-1" />
-                            </Link>
-                          </div>
-                        </div>
-                      </fieldset>
-                    )}
-                    {currentStep === 4 && (
-                      <fieldset
-                        className="form-inner wizard-form-card"
-                        style={{ display: "block" }}
-                      >
-                        <div className="title">
-                          <div className="row align-items-center row-gap-3">
-                            <div className="col-md-9">
-                              <h5 className="mb-0">Notes</h5>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="pb-3 border-bottom mb-3">
-                          <div className="summernote">
-                            <DefaultEditor
-                              value={notes}
-                              onChange={onNotesChange}
-                            />
-                          </div>
-                        </div>
-                        <div className="add-form-btn widget-next-btn submit-btn">
-                          <div className="btn-left">
-                            <Link
-                              to="#"
-                              className="btn btn-light main-btn prev_btns"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handlePrev();
-                              }}
-                            >
-                              <i className="isax isax-arrow-left-2 me-1" /> Prev
-                            </Link>
-                          </div>
-                          <div className="btn-left">
                             <button
                               type="submit"
                               className="btn btn-secondary main-btn next_btns"
-                              // data-bs-toggle="modal"
-                              // data-bs-target="#success"
                               disabled={loading}
                             >
                               {loading ? "Submitting..." : "Submit Course"}
@@ -921,7 +916,7 @@ const AddNewCourse: React.FC = () => {
                   </small>
                 </div>
                 <div className="input-block mb-4">
-                  <label className="form-label">Course Description</label>
+                  <label className="form-label">Lesson Description</label>
                   <textarea
                     className="form-control"
                     value={currentLesson.description}
@@ -932,6 +927,89 @@ const AddNewCourse: React.FC = () => {
                       })
                     }
                   />
+                </div>
+                <div className="input-block mb-2">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <label className="form-label mb-0">Resources</label>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-light"
+                      onClick={() =>
+                        setCurrentLesson({
+                          ...currentLesson,
+                          resources: [
+                            ...currentLesson.resources,
+                            { title: "", link: "", description: "" },
+                          ],
+                        })
+                      }
+                    >
+                      <i className="isax isax-add me-1" />
+                      Add Resource
+                    </button>
+                  </div>
+                  {currentLesson.resources.map((r, ri) => (
+                    <div className="border rounded p-2 mb-2" key={ri}>
+                      <div className="row g-2">
+                        <div className="col-md-5">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Title"
+                            value={r.title}
+                            onChange={(e) => {
+                              const resources = [...currentLesson.resources];
+                              resources[ri] = { ...r, title: e.target.value };
+                              setCurrentLesson({ ...currentLesson, resources });
+                            }}
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Link (URL)"
+                            value={r.link}
+                            onChange={(e) => {
+                              const resources = [...currentLesson.resources];
+                              resources[ri] = { ...r, link: e.target.value };
+                              setCurrentLesson({ ...currentLesson, resources });
+                            }}
+                          />
+                        </div>
+                        <div className="col-md-1 d-flex align-items-center">
+                          <button
+                            type="button"
+                            className="btn btn-sm text-danger"
+                            onClick={() => {
+                              const resources = currentLesson.resources.filter(
+                                (_, idx) => idx !== ri
+                              );
+                              setCurrentLesson({ ...currentLesson, resources });
+                            }}
+                          >
+                            <i className="isax isax-trash" />
+                          </button>
+                        </div>
+                        <div className="col-12">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Description (optional)"
+                            value={r.description}
+                            onChange={(e) => {
+                              const resources = [...currentLesson.resources];
+                              resources[ri] = {
+                                ...r,
+                                description: e.target.value,
+                              };
+                              setCurrentLesson({ ...currentLesson, resources });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
               <div className="modal-footer">

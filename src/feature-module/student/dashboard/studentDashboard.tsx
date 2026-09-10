@@ -90,6 +90,28 @@ const StudentDashboard = () => {
           <div className="row">
             <StudentSidebar />
             <div className="col-lg-9">
+              {coursesProgress?.totalEnrolledCourses === 0 && (
+                <div className="card border-0 shadow-sm mb-3">
+                  <div className="card-body d-flex flex-wrap align-items-center justify-content-between gap-3 p-4">
+                    <div>
+                      <h5 className="mb-1">
+                        You're not enrolled in any course yet
+                      </h5>
+                      <p className="mb-0 text-muted">
+                        Pick a course and start learning — your first step to
+                        earning starts here.
+                      </p>
+                    </div>
+                    <Link
+                      to={all_routes.courseGrid}
+                      className="btn btn-secondary d-inline-flex align-items-center"
+                    >
+                      Become Our Student — Enroll Now
+                      <i className="isax isax-arrow-right-3 ms-1" />
+                    </Link>
+                  </div>
+                </div>
+              )}
               <div className="row">
                 <div className="col-md-6 col-xl-4">
                   <div className="card">

@@ -7,6 +7,7 @@ import { fetchStudentEnrolledCourses } from "../../../core/redux/studentCoursesS
 import { all_routes } from "../../router/all_routes";
 import ProfileCard from "../common/profileCard";
 import StudentSidebar from "../common/studentSidebar";
+import { courseUrl } from "../../../core/common/courseLink";
 
 const StudentCourse = () => {
   const route = all_routes;
@@ -59,7 +60,7 @@ const StudentCourse = () => {
                     <div className="col-xl-4 col-md-6" key={course._id || idx}>
                       <div className="course-item-two course-item p-3 mx-0">
                         <div className="course-img">
-                          <Link to={`${route.courseDetails}?id=${course._id}`}>
+                          <Link to={courseUrl(course)}>
                             <ImageGlobal
                               src={course?.courseThumbnailUrl ?? ""}
                               alt={course.courseTitle}
@@ -78,18 +79,24 @@ const StudentCourse = () => {
                           </div>
                           <h6 className="title mb-2 text-truncate">
                             <Link
-                              to={`${route.courseDetails}?id=${course._id}`}
+                              to={courseUrl(course)}
                             >
                               {course.courseTitle}
                             </Link>
                           </h6>
+                          {course.duration && (
+                            <div className="text-muted d-flex align-items-center mb-1" style={{ fontSize: 13 }}>
+                              <i className="isax isax-clock me-1" />
+                              {course.duration}
+                            </div>
+                          )}
                           <div className="d-flex align-items-center justify-content-between">
                             <h5 className="text-secondary mb-0"></h5>
                             <Link
-                              to={`${route.courseDetails}?id=${course._id}`}
+                              to={`${route.courseWatch}?id=${course._id}&std=${currentUser?._id}`}
                               className="btn btn-secondary btn-sm d-inline-flex align-items-center mt-2 mb-1"
                             >
-                              View Course{" "}
+                              Watch Now{" "}
                               <i className="isax isax-arrow-right-3 ms-1" />
                             </Link>
                           </div>

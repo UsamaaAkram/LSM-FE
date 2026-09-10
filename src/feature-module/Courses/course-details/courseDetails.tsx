@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { fetchCourseById } from "../../../core/redux/courses";
-import VideoModal from "../../HomePages/home-one/section/videoModal";
+import { fetchCourseById, fetchCourseBySlug } from "../../../core/redux/courses";
 import { all_routes } from "../../router/all_routes";
 import ImageGlobal from "../../../core/common/ImageGlobal/ImageGlobal";
 import moment from "moment";
@@ -13,9 +12,32 @@ import {
   removeFromWishlist,
 } from "../../../core/redux/studentSlice";
 import { fetchStudentEnrolledCourses } from "../../../core/redux/studentCoursesSlice";
-import { WHATSAPP_ENROLL } from "../../../core/common/bluverseLinks";
+import { whatsappInquiry } from "../../../core/common/bluverseLinks";
+import {
+  formatPrice,
+  hasCompareAt,
+  hasPrice,
+} from "../../../core/common/coursePrice";
 import { toast } from "react-toastify";
 import type { AppDispatch, RootState } from "../../../core/redux/store";
+
+// Static category logo (#38) — the old play-button preview opened a video
+// modal for `courseVideoUrl`, a field with no input anywhere in the course
+// creation form, so it was always empty: every click was a dead end that
+// misled students into thinking they could preview real lesson content
+// pre-enrollment. courseCategory is free-text, so this matches by keyword
+// rather than an exact enum.
+function getCategoryLogo(category: string | undefined): {
+  icon: string;
+  brand?: boolean;
+} {
+  const c = (category || "").toLowerCase();
+  if (c.includes("tiktok")) return { icon: "fa-brands fa-tiktok", brand: true };
+  if (c.includes("youtube")) return { icon: "fa-brands fa-youtube", brand: true };
+  if (c.includes("ai")) return { icon: "isax isax-cpu" };
+  if (c.includes("edit")) return { icon: "isax isax-scissor" };
+  return { icon: "isax isax-video" };
+}
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -24,6 +46,9 @@ function useQuery() {
 const CourseDetails = () => {
   const query = useQuery();
   const id = query.get("id");
+  // #48 — this page serves both /courses/<slug> and the legacy
+  // /courses/details?id=<id>, so shared links from either era keep working.
+  const { slug } = useParams<{ slug?: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const auth: any = useSelector<RootState>((state: any) => state.auth.user);
   const { currentCourse, loading, error } = useSelector(
@@ -34,14 +59,11 @@ const CourseDetails = () => {
     (state: any) => state.studentCourses?.courses || []
   );
 
-  const [showModal, setShowModal] = useState(false);
-  const [duration, setDuration] = useState(0);
-
   useEffect(() => {
-    if (id) {
-      dispatch(fetchCourseById(id) as any);
-    }
-  }, [dispatch, id]);
+    // Slug wins when present; ?id= is the legacy path.
+    if (slug) dispatch(fetchCourseBySlug(slug) as any);
+    else if (id) dispatch(fetchCourseById(id) as any);
+  }, [dispatch, id, slug]);
 
   // Load the student's enrolled courses so we can gate access (paid vs not)
   useEffect(() => {
@@ -50,8 +72,6 @@ const CourseDetails = () => {
     }
   }, [dispatch, auth?._id, auth?.role]);
 
-  const handleOpenModal = () => setShowModal(true);
-  const handleCloseModal = () => setShowModal(false);
   const route = all_routes;
 
   // Render content using expected API object
@@ -61,16 +81,10 @@ const CourseDetails = () => {
   if (!currentCourse)
     return <div className="text-center py-5">No course found.</div>;
 
+  // Course duration is now a free-text field (#2.4, no longer HH:mm:ss —
+  // that format capped courses at 24h), so it's shown as entered.
   function formatDuration(duration: string) {
-    const m = moment(duration, "HH:mm:ss");
-    const parts = [];
-    const hours = m.hours();
-    const mins = m.minutes();
-    const secs = m.seconds();
-    if (hours) parts.push(`${hours} hr`);
-    if (mins) parts.push(`${mins} min`);
-    if (secs) parts.push(`${secs} sec`);
-    return parts.join(" ");
+    return duration || "";
   }
 
   const isEnrolled: boolean = Array.isArray(enrolledCourses)
@@ -124,47 +138,17 @@ const CourseDetails = () => {
             <div className="col-12">
               <div className="card bg-light">
                 <div className="card-body d-lg-flex align-items-center">
-                  <div className="position-relative">
-                    <Link
-                      to="#"
-                      id="openVideoBtn"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleOpenModal();
-                      }}
-                    >
-                      <ImageGlobal
-                        src={currentCourse.courseThumbnailUrl}
-                        alt="Course Thumbnail"
-                        height={150}
-                      />
-                      <div
-                        className="play-icon"
-                        style={{
-                          cursor: "pointer",
-                          height: "50px",
-                          width: "50px",
-                        }}
-                      >
-                        <i className="ti ti-player-play-filled fs-28" />
-                      </div>
-                    </Link>
-                  </div>
-                  <div id="videoModal">
-                    <div className="modal-content1">
-                      <span className="close-btn" id="closeModal">
-                        ×
-                      </span>
-                      <VideoModal
-                        show={showModal}
-                        handleClose={handleCloseModal}
-                        videoUrl={currentCourse.courseVideoUrl}
-                        setWatchedSegments={() => {}}
-                        watchedSegments={[]}
-                        duration={duration}
-                        setDuration={setDuration}
-                      />
-                    </div>
+                  <div
+                    className="position-relative d-flex align-items-center justify-content-center bg-primary-transparent rounded-3"
+                    style={{ height: 150, width: 150 }}
+                    title={currentCourse.courseCategory}
+                  >
+                    <i
+                      className={`${
+                        getCategoryLogo(currentCourse.courseCategory).icon
+                      } text-primary`}
+                      style={{ fontSize: 48 }}
+                    />
                   </div>
                   <div className="w-100 ps-lg-4">
                     <h3 className="mb-2">{currentCourse.courseTitle}</h3>
@@ -279,55 +263,79 @@ const CourseDetails = () => {
                             ? "Remove to Wishlist"
                             : "Add to Wishlist"}
                         </button>
-                        {isEnrolled ? (
+                        {isEnrolled || currentCourse.freeAccess ? (
                           <Link
                             to={`${route.courseWatch}?id=${currentCourse._id}&&std=${auth?._id}`}
                             className="btn btn-primary w-100 btn-enroll"
                           >
-                            Watch Now
+                            {isEnrolled ? "Watch Now" : "Start Learning"}
                           </Link>
                         ) : (
-                          <a
-                            href={WHATSAPP_ENROLL}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <Link
+                            to={`${route.enroll}?course=${currentCourse._id}`}
                             className="btn btn-primary w-100 btn-enroll"
                           >
                             Enroll Now
-                          </a>
+                          </Link>
                         )}
                       </div>
+                      {/* #47.1 — WhatsApp is for pre-enrollment questions;
+                          the enrollment itself stays inside the LMS. */}
+                      {!isEnrolled && !currentCourse.freeAccess && (
+                        <a
+                          href={whatsappInquiry(currentCourse.courseTitle)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-outline-success w-100 mt-2"
+                        >
+                          <i className="isax isax-message-text me-1" />
+                          Chat on WhatsApp
+                        </a>
+                      )}
                     </div>
                   </div>
                 )}
                 {!auth && (
                   <div className="card mb-4">
                     <div className="card-body">
-                      {(currentCourse.price > 0 ||
-                        currentCourse.originalPrice > 0) && (
+                      {currentCourse.freeAccess && (
+                        <span className="badge bg-success-transparent text-success mb-3">
+                          Free Access
+                        </span>
+                      )}
+                      {(hasPrice(currentCourse.price) ||
+                        hasCompareAt(
+                          currentCourse.originalPrice,
+                          currentCourse.price
+                        )) && (
                         <div className="mb-3 d-flex align-items-center gap-2">
-                          {currentCourse.originalPrice >
-                            currentCourse.price && (
+                          {hasCompareAt(
+                            currentCourse.originalPrice,
+                            currentCourse.price
+                          ) && (
                             <span className="text-muted text-decoration-line-through">
-                              Rs{" "}
-                              {Number(
-                                currentCourse.originalPrice
-                              ).toLocaleString()}
+                              {formatPrice(currentCourse.originalPrice)}
                             </span>
                           )}
                           <span className="fs-22 fw-bold text-secondary">
-                            Rs{" "}
-                            {Number(currentCourse.price || 0).toLocaleString()}
+                            {formatPrice(currentCourse.price)}
                           </span>
                         </div>
                       )}
-                      <a
-                        href={WHATSAPP_ENROLL}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Link
+                        to={`${route.enroll}?course=${currentCourse._id}`}
                         className="btn btn-primary w-100 btn-enroll"
                       >
                         Enroll Now
+                      </Link>
+                      <a
+                        href={whatsappInquiry(currentCourse.courseTitle)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline-success w-100 mt-2"
+                      >
+                        <i className="isax isax-message-text me-1" />
+                        Chat on WhatsApp
                       </a>
                     </div>
                   </div>
@@ -341,15 +349,7 @@ const CourseDetails = () => {
                         src="./assets/img/icons/key.svg"
                         alt="img"
                       />
-                      Full lifetime access
-                    </p>
-                    <p className="mb-3">
-                      <ImageWithBasePath
-                        className="me-2"
-                        src="./assets/img/icons/monitor-mobbile.svg"
-                        alt="img"
-                      />
-                      Access on mobile and TV
+                      Lifetime Access
                     </p>
                     <p className="mb-3">
                       <ImageWithBasePath
@@ -359,13 +359,21 @@ const CourseDetails = () => {
                       />
                       Assignments
                     </p>
+                    <p className="mb-3">
+                      <ImageWithBasePath
+                        className="me-2"
+                        src="./assets/img/icons/note.svg"
+                        alt="img"
+                      />
+                      Quizzes
+                    </p>
                     <p className="mb-0">
                       <ImageWithBasePath
                         className="me-2"
                         src="./assets/img/icons/teacher.svg"
                         alt="img"
                       />
-                      Certificate of Completion
+                      Community Access
                     </p>
                   </div>
                 </div>

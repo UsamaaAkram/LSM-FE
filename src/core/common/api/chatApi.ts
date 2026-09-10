@@ -28,6 +28,21 @@ const chatApi = {
     return res.data;
   },
 
+  // Edit/delete a message (#2) — sender-only edit, sender-or-Instructor delete.
+  editMessage: async (messageId: string, content: string, userId: string) => {
+    const res = await axios.patch(`${BASE_URL}/messages/message/${messageId}`, {
+      content,
+      userId,
+    });
+    return res.data;
+  },
+
+  deleteMessage: async (messageId: string, userId: string, role: string) => {
+    return await axios.delete(`${BASE_URL}/messages/message/${messageId}`, {
+      data: { userId, userModel: role },
+    });
+  },
+
   createChat: async (participants: string[], groupName?: string) => {
     const res = await axios.post(`${BASE_URL}/chat`, {
       participants,

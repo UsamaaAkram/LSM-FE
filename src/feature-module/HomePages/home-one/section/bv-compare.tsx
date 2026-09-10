@@ -86,9 +86,15 @@ const BvCompare = () => {
         <div className="container">
           <div className="home-five-head text-center mx-auto" data-aos="fade-up">
             <h2>Why You Choose Content Creation?</h2>
+            {/* Client-approved wording (10 Sep 2026). The previous line claimed
+                "millions of creators are building scalable online businesses" -
+                an unverifiable third-party claim published in the founder's
+                name. This version speaks to beginners instead. */}
             <p className="mt-2">
-              Compare content creation with other popular career paths and see
-              why millions of creators are building scalable online businesses.
+              Starting from scratch? Compare content creation with other popular
+              career paths and discover why it can be an accessible way for
+              beginners to build skills, grow an audience, and create income
+              opportunities online.
             </p>
           </div>
           <div

@@ -1,4 +1,4 @@
-import moment from "moment";
+import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -22,14 +22,16 @@ import {
 import ProfileCard from "../common/profileCard";
 import StudentSidebar from "../common/studentSidebar";
 import TicketModal from "../../../core/common/ticketModal/TicketModal";
+import TicketReplyThread from "../../../core/common/ticketModal/TicketReplyThread";
 // import TicketModal from ".";
 
 type OptionType = { label: string; value: string | number };
 
 const StatusOptions: OptionType[] = [
   { label: "Opened", value: "Opened" },
-  { label: "Closed", value: "Closed" },
   { label: "Inprogress", value: "Inprogress" },
+  { label: "Resolved", value: "Resolved" },
+  { label: "Closed", value: "Closed" },
 ];
 
 const InstructorTickets = () => {
@@ -145,6 +147,11 @@ const InstructorTickets = () => {
       Description: values.Description,
       Attachments: values.Attachments,
       createdBy: currentUser?._id,
+      createdByName:
+        currentUser?.student?.firstName && currentUser?.student?.lastName
+          ? `${currentUser.student.firstName} ${currentUser.student.lastName}`
+          : currentUser?.student?.userName || "",
+      createdByEmail: currentUser?.student?.email || "",
       Date: new Date().toLocaleDateString(),
     };
 
@@ -214,8 +221,19 @@ const InstructorTickets = () => {
             currentUser?.student?.name ??
             currentUser?.student?.email
           : currentUser?.userName ?? currentUser?.name ?? currentUser?.email,
+      name:
+        currentUser?.role === "student"
+          ? currentUser?.student?.firstName
+            ? `${currentUser.student.firstName} ${
+                currentUser.student.lastName ?? ""
+              }`.trim()
+            : ""
+          : currentUser?.name ?? "",
       message: replyText,
-      date: new Date().toLocaleString(),
+      // The server stamps its own ISO timestamp; this is only a local
+      // placeholder in case the reply is rendered before the refetch lands.
+      date: new Date().toISOString(),
+      role: currentUser?.role ?? "",
     };
 
     try {
@@ -228,7 +246,12 @@ const InstructorTickets = () => {
         setSelectedTicketIdx({ ...updatedTicket });
         fetchTickets();
       } else {
-        toast.error("Error adding reply. Please try again.");
+        // Surface the server's actual reason (e.g. the ticket is locked)
+        // instead of a generic message the student can't act on.
+        toast.error(
+          (resultAction.payload as string) ||
+            "Error adding reply. Please try again."
+        );
       }
     } catch (error: any) {
       toast.error(error?.message || "Unexpected error adding reply.");
@@ -569,51 +592,71 @@ const InstructorTickets = () => {
                     />
                   </div>
                 )}
+                {selectedTicketIdx?.Status === "Resolved" && (
+                  <div className="col-lg-12 mb-3">
+                    <div className="alert alert-warning d-flex align-items-center justify-content-between flex-wrap gap-2">
+                      <span className="fw-semibold">
+                        Staff marked this resolved — was your issue fixed?
+                      </span>
+                      <div className="d-flex gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-success"
+                          onClick={async () => {
+                            try {
+                              await axios.post(
+                                `${
+                                  import.meta.env.VITE_API_URL ||
+                                  "http://localhost:5000"
+                                }/api/tickets/${selectedTicketIdx._id}/confirm-resolved`,
+                                { confirmed: true }
+                              );
+                              toast.success("Ticket closed. Thanks for confirming!");
+                              setSelectedTicketIdx(null);
+                              fetchTickets();
+                            } catch {
+                              toast.error("Could not confirm. Please try again.");
+                            }
+                          }}
+                        >
+                          Yes, it's fixed
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={async () => {
+                            try {
+                              await axios.post(
+                                `${
+                                  import.meta.env.VITE_API_URL ||
+                                  "http://localhost:5000"
+                                }/api/tickets/${selectedTicketIdx._id}/confirm-resolved`,
+                                { confirmed: false }
+                              );
+                              toast.info("Reopened — we'll keep looking into it.");
+                              setSelectedTicketIdx(null);
+                              fetchTickets();
+                            } catch {
+                              toast.error("Could not reopen. Please try again.");
+                            }
+                          }}
+                        >
+                          No, still an issue
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="mt-3">
                 <h6 className="mb-3">Replies</h6>
-                <div>
-                  {selectedTicketIdx !== null &&
-                  selectedTicketIdx?.Replies?.length
-                    ? selectedTicketIdx.Replies!.map(
-                        (reply: any, idx: number) => (
-                          <div key={idx} className="mb-3 py-2 px-3  border rounded-3">
-                            <div className="d-flex justify-content-between align-items-start">
-                              <div>
-                                <h6 className="fs-16 fw-medium mb-0 d-flex align-items-center">
-                                  <strong>{reply.userName ?? ""}</strong>
-                                </h6>
-                                <p className="fs-10 text-muted">{reply.email}</p>
-                              </div>
-                              <span className="fs-10 text-muted">
-                                {moment(
-                                  reply.date,
-                                  "DD/MM/YYYY, HH:mm:ss"
-                                ).format("D MMMM YYYY [at] HH:mm")}
-                              </span>
-                            </div>
-                            <div className="mt-2">{reply.message}</div>
-                          </div>
-                        )
-                      )
-                    : null}
-                  <form onSubmit={handleAddReply}>
-                    <textarea
-                      className="form-control mb-2"
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="Write your reply"
-                      rows={2}
-                      required
-                    />
-                    <button
-                      className="btn btn-secondary btn-sm rounded-pill"
-                      type="submit"
-                    >
-                      Add Reply
-                    </button>
-                  </form>
-                </div>
+                <TicketReplyThread
+                  replies={selectedTicketIdx?.Replies}
+                  status={selectedTicketIdx?.Status}
+                  replyText={replyText}
+                  onReplyTextChange={setReplyText}
+                  onSubmit={handleAddReply}
+                />
               </div>
             </div>
           </div>

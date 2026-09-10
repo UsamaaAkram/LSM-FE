@@ -23,8 +23,11 @@ import {
   markChatAsRead,
   prependMessages,
   removeChat,
+  removeMessage,
   setActiveChat,
   unblockChat,
+  updateMessageContent,
+  markMessageSeen,
   updateMessageReaction,
   uploadAttachment,
 } from "../../../core/redux/chatSlice";
@@ -33,6 +36,7 @@ import type { AppDispatch, RootState } from "../../../core/redux/store";
 import { chatSocket } from "../../../utils/chatSocket";
 import InstructorSidebar from "../common/studentSidebar";
 import ProfileCard from "../common/profileCard";
+import CommunityFeed from "../../../components/CommunityFeed";
 
 const StudentMessage = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -43,6 +47,7 @@ const StudentMessage = () => {
   const currentUser: any = useSelector((state: RootState) => state.auth.user);
 
   // State for searching chats, messages
+  const [mainTab, setMainTab] = useState<"chats" | "community">("chats");
   const [searchTerm, setSearchTerm] = useState("");
   const [messageText, setMessageText] = useState("");
 
@@ -91,6 +96,45 @@ const StudentMessage = () => {
       chatSocket.emit("joinChat", { chatId: activeChat._id });
     }
   }, [dispatch, activeChat]);
+
+  // #2.13 — mark the open conversation read. One bulk emit rather than one per
+  // message, and only for messages somebody ELSE sent that we haven't already
+  // been recorded against, so re-renders don't re-emit endlessly.
+  useEffect(() => {
+    if (!activeChat?._id || !currentUser?._id || !messages?.length) return;
+    const unread = messages
+      .filter((m: any) => {
+        const senderId = typeof m.sender === "string" ? m.sender : m.sender?._id;
+        if (String(senderId) === String(currentUser._id)) return false;
+        return !(m.seenBy ?? []).some(
+          (id: any) =>
+            String(typeof id === "string" ? id : id?._id) ===
+            String(currentUser._id)
+        );
+      })
+      .map((m: any) => m._id)
+      .filter(Boolean);
+    if (!unread.length) return;
+    chatSocket.emit("messagesSeenBulk", {
+      chatId: activeChat._id,
+      messageIds: unread,
+      userId: currentUser._id,
+    });
+  }, [activeChat?._id, currentUser?._id, messages]);
+
+  // Receipts arriving from other participants.
+  useEffect(() => {
+    const onSeen = ({ messageId, userId }: any) =>
+      dispatch(markMessageSeen({ messageIds: [messageId], userId }));
+    const onSeenBulk = ({ messageIds, userId }: any) =>
+      dispatch(markMessageSeen({ messageIds, userId }));
+    chatSocket.on("messageSeen", onSeen);
+    chatSocket.on("messagesSeenBulk", onSeenBulk);
+    return () => {
+      chatSocket.off("messageSeen", onSeen);
+      chatSocket.off("messagesSeenBulk", onSeenBulk);
+    };
+  }, [dispatch]);
 
   const handleSend = () => {
     if (!messageText || !activeChat || !currentUser) return;
@@ -273,6 +317,22 @@ const StudentMessage = () => {
     chatSocket.on("reactMessage", handler);
     return () => {
       chatSocket.off("reactMessage", handler);
+    };
+  }, [dispatch, activeChat?._id]);
+
+  // Edit/delete message (#2) — mirrors the reactMessage listener above.
+  useEffect(() => {
+    const onDeleted = ({ messageId }: any) => {
+      dispatch(removeMessage({ messageId }));
+    };
+    const onEdited = ({ messageId, content, editedAt }: any) => {
+      dispatch(updateMessageContent({ messageId, content, editedAt }));
+    };
+    chatSocket.on("deleteMessage", onDeleted);
+    chatSocket.on("editMessage", onEdited);
+    return () => {
+      chatSocket.off("deleteMessage", onDeleted);
+      chatSocket.off("editMessage", onEdited);
     };
   }, [dispatch, activeChat?._id]);
 
@@ -492,6 +552,55 @@ const StudentMessage = () => {
     // Prepend messages to top
     dispatch(prependMessages(res.payload));
   };
+
+  // #2.5 — Chats and Community are separate views of this page. Rendered as an
+  // early return rather than by wrapping the (large) chat tree, so the existing
+  // markup stays untouched.
+  const tabBar = (
+    <ul className="nav nav-pills gap-1 mb-3">
+      {[
+        { key: "chats", label: "Chats" },
+        { key: "community", label: "Community" },
+      ].map((t) => (
+        <li className="nav-item" key={t.key}>
+          <button
+            type="button"
+            className={`nav-link btn btn-sm ${
+              mainTab === t.key ? "active" : ""
+            }`}
+            onClick={() => setMainTab(t.key as "chats" | "community")}
+          >
+            {t.label}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+
+  if (mainTab === "community") {
+    return (
+      <>
+        <Breadcrumb title="Messages" />
+        <div className="content">
+          <div className="container">
+            <ProfileCard />
+            <div className="row">
+              <InstructorSidebar />
+              <div className="col-lg-9">
+                <div className="instructor-message">
+                  <div className="page-title">
+                    <h5>Messages</h5>
+                  </div>
+                  {tabBar}
+                  <CommunityFeed />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -800,6 +909,7 @@ const StudentMessage = () => {
                               </li>
                             )}
                             <ChatMessageList
+                              isAnnouncement={isAnnouncementGroup}
                               messages={messages}
                               currentUser={currentUser}
                               onReactMessage={({
@@ -820,6 +930,27 @@ const StudentMessage = () => {
                                       ? "Instructor"
                                       : "User",
                                   emoji,
+                                });
+                              }}
+                              onEditMessage={({ messageId, content }: any) => {
+                                chatSocket.emit("editMessage", {
+                                  chatId: activeChat?._id,
+                                  messageId,
+                                  userId: currentUser._id,
+                                  content,
+                                });
+                              }}
+                              onDeleteMessage={({ messageId }: any) => {
+                                chatSocket.emit("deleteMessage", {
+                                  chatId: activeChat?._id,
+                                  messageId,
+                                  userId: currentUser._id,
+                                  userModel:
+                                    currentUser.role === "student"
+                                      ? "Student"
+                                      : currentUser.role === "instructor"
+                                      ? "Instructor"
+                                      : "User",
                                 });
                               }}
                             />
