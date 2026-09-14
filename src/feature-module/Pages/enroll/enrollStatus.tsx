@@ -232,16 +232,25 @@ const EnrollStatus: React.FC = () => {
                   <div className="table-responsive">
                     <table className="table table-sm mb-0">
                       <tbody>
-                        <tr>
-                          <td className="text-muted">Name</td>
-                          <td>
-                            {current.firstName} {current.lastName}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="text-muted">Email</td>
-                          <td>{current.email}</td>
-                        </tr>
+                        {/* Personal details are no longer returned to an
+                            anonymous caller: this page is public and the
+                            reference is sequential, so anyone counting upwards
+                            could have harvested names and emails. Rendered
+                            only when the viewer is entitled to them. */}
+                        {(current.firstName || current.email) && (
+                          <>
+                            <tr>
+                              <td className="text-muted">Name</td>
+                              <td>
+                                {current.firstName} {current.lastName}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="text-muted">Email</td>
+                              <td>{current.email}</td>
+                            </tr>
+                          </>
+                        )}
                         {current.planName && (
                           <tr>
                             <td className="text-muted">Plan</td>
