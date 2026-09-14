@@ -9,8 +9,26 @@ import { base_path } from "./environment.tsx";
 import { store } from "./core/redux/store";
 import { logout } from "./core/redux/authSlice";
 import ALLRoutes from "./feature-module/router/router";
+import { setSocketAuthToken } from "./core/common/socket/chatSocket";
 
 const App = () => {
+  // Keep the socket's credentials in step with the session. The server
+  // authenticates the handshake now, so a socket opened without a current
+  // token is refused; subscribing here means a login or logout updates it
+  // before the next connect or reconnect attempt.
+  useEffect(() => {
+    setSocketAuthToken(store.getState().auth?.token ?? null);
+    let last = store.getState().auth?.token ?? null;
+    const unsubscribe = store.subscribe(() => {
+      const next = store.getState().auth?.token ?? null;
+      if (next !== last) {
+        last = next;
+        setSocketAuthToken(next);
+      }
+    });
+    return unsubscribe;
+  }, []);
+
   useEffect(() => {
     // Initialise scroll/card animations used across the site via data-aos.
     AOS.init({ duration: 700, once: true, easing: "ease-out-cubic" });
