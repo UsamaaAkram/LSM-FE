@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import { Link } from "react-router-dom";
 import StudentSidebar from "../common/studentSidebar";
-import { all_routes } from "../../router/all_routes";
 import { fetchStudentWishlistCourses } from "../../../core/redux/studentWishlistSlice";
 import type { AppDispatch, RootState } from "../../../core/redux/store";
 import ImageGlobal from "../../../core/common/ImageGlobal/ImageGlobal";
@@ -11,7 +10,6 @@ import ProfileCard from "../common/profileCard";
 import { courseUrl } from "../../../core/common/courseLink";
 
 const StudentWishlist = () => {
-  const route = all_routes;
   const dispatch = useDispatch<AppDispatch>();
   const authUser: any = useSelector<RootState>((state) => state.auth.user);
   const studentWishlist: any = useSelector<RootState>(

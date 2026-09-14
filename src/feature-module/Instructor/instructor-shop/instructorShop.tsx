@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import moment from "moment";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import ImageGlobal from "../../../core/common/ImageGlobal/ImageGlobal";
 import { formatPrice, hasPrice } from "../../../core/common/coursePrice";

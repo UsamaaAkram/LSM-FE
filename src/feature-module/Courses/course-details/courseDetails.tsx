@@ -1,12 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useParams } from "react-router-dom";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import { fetchCourseById, fetchCourseBySlug } from "../../../core/redux/courses";
 import { all_routes } from "../../router/all_routes";
-import ImageGlobal from "../../../core/common/ImageGlobal/ImageGlobal";
-import moment from "moment";
 import {
   addToWishlist,
   removeFromWishlist,

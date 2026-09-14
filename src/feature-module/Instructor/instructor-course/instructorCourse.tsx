@@ -11,7 +11,6 @@ import { useDispatch, useSelector } from "react-redux";
 import ImageGlobal from "../../../core/common/ImageGlobal/ImageGlobal";
 import { deleteCourse, fetchCourses } from "../../../core/redux/courses";
 import { toast } from "react-toastify";
-import moment from "moment";
 import { courseUrl } from "../../../core/common/courseLink";
 
 const InstructorCourse = () => {

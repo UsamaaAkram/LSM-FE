@@ -27,10 +27,15 @@ export interface Course {
   courseThumbnail?: File | null; // For upload
   courseVideoProvider?: string | number;
   courseVideoUrl?: string;
-  price?: number;
-  originalPrice?: number;
+  // Free text since #18: a course price can be a label ("Free", "Contact Us")
+  // as well as an amount, and the backend stores it as a string. The old
+  // `number` typing was what made the edit-course payload unassignable.
+  price?: string;
+  originalPrice?: string;
   curriculum: Topic[];
-  notes: string;
+  // Optional: the create/edit forms build their payload without it, and the
+  // API defaults it. Requiring it here only forced callers to invent a value.
+  notes?: string;
   status?: string;
   createdAt?: string;
   updatedAt?: string;

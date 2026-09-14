@@ -804,13 +804,15 @@ const CourseWatch = () => {
                                           status === "Pending" ||
                                           status === "Needs Revision";
                                         const badgeClass =
-                                          {
-                                            Pending: "bg-light text-dark",
-                                            "Under Review": "bg-warning",
-                                            Reviewed: "bg-info",
-                                            "Needs Revision": "bg-danger",
-                                            Completed: "bg-success",
-                                          }[status] || "bg-light text-dark";
+                                          (
+                                            {
+                                              Pending: "bg-light text-dark",
+                                              "Under Review": "bg-warning",
+                                              Reviewed: "bg-info",
+                                              "Needs Revision": "bg-danger",
+                                              Completed: "bg-success",
+                                            } as Record<string, string>
+                                          )[status] || "bg-light text-dark";
                                         return (
                                           <>
                                             <div className="mb-3">
@@ -986,7 +988,9 @@ const CourseWatch = () => {
                                                       ] || ""
                                                     )
                                                       .split("\n")
-                                                      .map((l) => l.trim())
+                                                      .map((l: string) =>
+                                                        l.trim()
+                                                      )
                                                       .filter(Boolean),
                                                     file:
                                                       submissionFiles[
