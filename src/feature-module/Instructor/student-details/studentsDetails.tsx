@@ -8,6 +8,7 @@ import * as Yup from "yup";
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
 import { all_routes } from "../../router/all_routes";
 import ProfileCard from "../common/profileCard";
+import InstructorSidebar from "../common/instructorSidebar";
 import { useDispatch, useSelector } from "react-redux";
 // import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../../../core/redux/store"; // <-- path to your store
@@ -231,6 +232,12 @@ const StudentsDetails = () => {
       <div className="content instructor-detail-content">
         <div className="container">
           <ProfileCard />
+          {/* Had the profile banner but no menu, so the page dead-ended:
+              the only way on was the browser's back button. Same shell as
+              every other instructor screen. */}
+          <div className="row">
+            <InstructorSidebar />
+            <div className="col-lg-9">
           <Link
             to={all_routes.studentsList}
             className="d-flex align-items-center mb-3"
@@ -644,6 +651,8 @@ const StudentsDetails = () => {
               );
             }}
           </Formik>
+            </div>
+          </div>
         </div>
       </div>
     </>

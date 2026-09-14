@@ -34,7 +34,7 @@ import {
 import { fetchAllChatUsers } from "../../../core/redux/chatUserSlice";
 import type { AppDispatch, RootState } from "../../../core/redux/store";
 import { chatSocket } from "../../../utils/chatSocket";
-import InstructorSidebar from "../common/studentSidebar";
+import StudentSidebar from "../common/studentSidebar";
 import ProfileCard from "../common/profileCard";
 import CommunityFeed from "../../../components/CommunityFeed";
 
@@ -585,7 +585,7 @@ const StudentMessage = () => {
           <div className="container">
             <ProfileCard />
             <div className="row">
-              <InstructorSidebar />
+              <StudentSidebar />
               <div className="col-lg-9">
                 <div className="instructor-message">
                   <div className="page-title">
@@ -609,7 +609,7 @@ const StudentMessage = () => {
         <div className="container">
           <ProfileCard />
           <div className="row">
-            <InstructorSidebar />
+            <StudentSidebar />
             <div className="col-lg-9">
               <div className="instructor-message">
                 <div className="page-title d-flex justify-content-between align-items-center">
