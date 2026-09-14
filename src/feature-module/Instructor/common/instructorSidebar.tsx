@@ -70,6 +70,10 @@
 
 
 import { useSelector, useDispatch } from "react-redux";
+import {
+  canAccessModule,
+  sidebarModuleName,
+} from "../../../core/common/modulePermissions";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { instructorSidebarData } from "../../../core/common/data/json/instructor-sidebar";
 import { all_routes } from "../../router/all_routes";
@@ -81,7 +85,6 @@ const InstructorSidebar = () => {
   const navigate = useNavigate();
 
   const user = useSelector((state: any) => state.auth.user);
-  const modulesAccess = user?.role === "instructor" ? user?.modules ?? [] : null;
 
   // Remove "All Instructors" menu for instructors
   const filteredSidebar = instructorSidebarData.filter(menu => {
@@ -91,18 +94,11 @@ const InstructorSidebar = () => {
     return true;
   });
 
-  // Helper to match module to sidebar title (normalize name)
-  const canAccess = (menu: any) => {
-    if (!modulesAccess) return true; // admin or other: full access
-    // Prefer an explicit module key; else normalize the title
-    const target = (
-      menu.module || menu.title.replace(/\s+/g, "")
-    ).toLowerCase();
-    const mod = modulesAccess.find(
-      (item: any) => item.name.toLowerCase() === target
-    );
-    return !mod?.isDisable;
-  };
+  // Shared with the Receipts page so a link can never point at a screen that
+  // then refuses the same user. This used to treat a missing module entry as
+  // "allowed" while the page treated it as "denied".
+  const canAccess = (menu: any) =>
+    canAccessModule(user, sidebarModuleName(menu));
 
   const handleLogout = async () => {
     dispatch(logout());

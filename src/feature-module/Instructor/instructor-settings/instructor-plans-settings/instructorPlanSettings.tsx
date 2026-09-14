@@ -2,6 +2,7 @@ import { DatePicker } from "antd";
 import moment from "moment";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { canAccessModule } from "../../../../core/common/modulePermissions";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -113,14 +114,12 @@ const InstructorPlanSettings = () => {
 
   // ─── Enrollment-receipt permission ───
   // Admins have full access. Instructors must have the "receipts" module
-  // explicitly enabled by an admin — default-DENY when the entry is missing
-  // (no auto-access to receipt/invoice generation).
-  const canManageReceipts = (() => {
-    if (user?.role !== "instructor") return true;
-    const mods: any[] = (user as any)?.modules ?? [];
-    const mod = mods.find((m) => m?.name === "receipts");
-    return !!mod && !mod.isDisable;
-  })();
+  // explicitly enabled by an admin — still default-DENY when the entry is
+  // missing (no auto-access to receipt/invoice generation).
+  //
+  // Shared with the instructor sidebar, which previously used the opposite
+  // default and so advertised this page to instructors it then locked out.
+  const canManageReceipts = canAccessModule(user, "receipts");
 
   // ─── Fetch invoices + catalog on mount ───
   useEffect(() => {
