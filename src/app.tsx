@@ -43,7 +43,14 @@ const App = () => {
       (err) => {
         const status = err?.response?.status;
         const msg = err?.response?.data?.error;
+        // Only treat a 401 as an EXPIRY when we actually held a token. A
+        // logged-out visitor on a public page can legitimately touch an
+        // endpoint that requires login; without this check that response
+        // would bounce them to /login, which is a worse bug than the one
+        // this guard exists to fix.
+        const hadToken = !!store.getState().auth?.token;
         const isAuthExpiry =
+          hadToken &&
           status === 401 &&
           (msg === "Invalid or expired token" ||
             msg === "No token, authorization denied");
