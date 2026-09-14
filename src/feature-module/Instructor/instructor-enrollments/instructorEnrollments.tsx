@@ -4,6 +4,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
+import ProfileCard from "../common/profileCard";
+import InstructorSidebar from "../common/instructorSidebar";
+import Pagination, { usePagination } from "../../../core/common/Pagination";
 import {
   approveEnrollment,
   fetchEnrollmentRequests,
@@ -40,6 +43,10 @@ const InstructorEnrollments: React.FC = () => {
 
   const [tab, setTab] = useState("Pending Verification");
   const [search, setSearch] = useState("");
+
+  // Switching tab or searching is a new result set, so the page resets to 1.
+  const { page, pageSize, pageCount, total, pageRows, setPage, setPageSize } =
+    usePagination<EnrollmentRequest>(requests || [], `${tab}|${search}`);
   const [selected, setSelected] = useState<EnrollmentRequest | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -136,6 +143,13 @@ const InstructorEnrollments: React.FC = () => {
       <Breadcrumb title="Enrollment Requests" />
       <div className="content">
         <div className="container">
+          {/* This page was rendering bare: no profile banner and no sidebar,
+              so it read as a public page and there was no way to navigate on
+              from it. Same shell as every other instructor screen. */}
+          <ProfileCard />
+          <div className="row">
+            <InstructorSidebar />
+            <div className="col-lg-9">
           <div className="card border-0 shadow-sm">
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -189,7 +203,7 @@ const InstructorEnrollments: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {requests.map((r: EnrollmentRequest) => (
+                      {pageRows.map((r: EnrollmentRequest) => (
                         <tr key={r._id}>
                           <td className="fw-semibold">{r.requestId}</td>
                           <td>
@@ -262,8 +276,19 @@ const InstructorEnrollments: React.FC = () => {
                       ))}
                     </tbody>
                   </table>
+                  <Pagination
+                    page={page}
+                    pageCount={pageCount}
+                    total={total}
+                    pageSize={pageSize}
+                    onPage={setPage}
+                    onPageSize={setPageSize}
+                    label="requests"
+                  />
                 </div>
               )}
+            </div>
+          </div>
             </div>
           </div>
         </div>

@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 import Breadcrumb from "../../../core/common/Breadcrumb/breadcrumb";
+import ProfileCard from "../common/profileCard";
+import StudentSidebar from "../common/studentSidebar";
 import { fetchMyEnrollments } from "../../../core/redux/enrollmentSlice";
 import type { EnrollmentRequest } from "../../../core/redux/enrollmentSlice";
 import { all_routes } from "../../router/all_routes";
@@ -48,6 +50,13 @@ const StudentEnrollments: React.FC = () => {
       <Breadcrumb title="My Enrollments" />
       <div className="content">
         <div className="container">
+          {/* Was rendering bare, with no profile banner or sidebar, so it read
+              as a public page and dead-ended. Same shell as the student's
+              other dashboard screens. */}
+          <ProfileCard />
+          <div className="row">
+            <StudentSidebar />
+            <div className="col-lg-9">
           <div className="card border-0 shadow-sm">
             <div className="card-body">
               {loading ? (
@@ -134,6 +143,8 @@ const StudentEnrollments: React.FC = () => {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
             </div>
           </div>
         </div>

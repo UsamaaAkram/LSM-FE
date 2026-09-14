@@ -12,6 +12,7 @@ import {
   orderDate,
 } from "../../../core/common/order/orderParts";
 import { formatPrice, hasPrice } from "../../../core/common/coursePrice";
+import Pagination, { usePagination } from "../../../core/common/Pagination";
 import {
   ALL_STATUSES,
   DELIVERY_TYPES,
@@ -72,6 +73,11 @@ const InstructorShopOrders = () => {
   useEffect(() => {
     if (error) toast.error(error);
   }, [error]);
+
+  // Same reset rule as every other table: a new status filter or search is a
+  // new result set, so the page returns to 1.
+  const { page, pageSize, pageCount, total, pageRows, setPage, setPageSize } =
+    usePagination<Order>(orders || [], `${status}|${debounced}`);
 
   const openOrder: Order | undefined = useMemo(
     () => (orders || []).find((o: Order) => o._id === openId),
@@ -229,7 +235,7 @@ const InstructorShopOrders = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {(orders || []).map((o: Order) => (
+                        {pageRows.map((o: Order) => (
                           <tr key={o._id}>
                             <td style={{ fontSize: 13 }}>
                               <div className="fw-semibold">{o.orderId || "—"}</div>
@@ -277,6 +283,17 @@ const InstructorShopOrders = () => {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  <div className="px-3 pb-3">
+                    <Pagination
+                      page={page}
+                      pageCount={pageCount}
+                      total={total}
+                      pageSize={pageSize}
+                      onPage={setPage}
+                      onPageSize={setPageSize}
+                      label="orders"
+                    />
                   </div>
                 </div>
               )}

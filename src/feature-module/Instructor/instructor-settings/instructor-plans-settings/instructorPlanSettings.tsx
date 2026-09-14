@@ -3,6 +3,7 @@ import moment from "moment";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { canAccessModule } from "../../../../core/common/modulePermissions";
+import Pagination, { usePagination } from "../../../../core/common/Pagination";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -120,6 +121,22 @@ const InstructorPlanSettings = () => {
   // Shared with the instructor sidebar, which previously used the opposite
   // default and so advertised this page to instructors it then locked out.
   const canManageReceipts = canAccessModule(user, "receipts");
+
+  // Paginated view of whatever the current filters returned. The reset key is
+  // every input that changes the result set — landing on page 3 and switching
+  // to a tab with one page would otherwise show an empty table.
+  const {
+    page,
+    pageSize,
+    pageCount,
+    total: pageTotal,
+    pageRows,
+    setPage,
+    setPageSize,
+  } = usePagination<any>(
+    invoices || [],
+    `${activeTab}|${statusFilter}|${searchTerm}|${batchFilter}`
+  );
 
   // ─── Fetch invoices + catalog on mount ───
   useEffect(() => {
@@ -871,7 +888,7 @@ const InstructorPlanSettings = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {invoices.map((inv: any) => (
+                      {pageRows.map((inv: any) => (
                         <tr key={inv._id}>
                           <td>
                             <span className="text-primary fw-medium">
@@ -981,6 +998,15 @@ const InstructorPlanSettings = () => {
                       ))}
                     </tbody>
                   </table>
+                  <Pagination
+                    page={page}
+                    pageCount={pageCount}
+                    total={pageTotal}
+                    pageSize={pageSize}
+                    onPage={setPage}
+                    onPageSize={setPageSize}
+                    label="invoices"
+                  />
                 </div>
               )}
               </>
