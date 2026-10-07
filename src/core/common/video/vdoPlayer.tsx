@@ -128,6 +128,9 @@ const VdoPlayer = ({
     if (!embed || !iframeRef.current) return;
     let disposed = false;
     let cleanup: (() => void) | null = null;
+    // Kept so the unmount handler can pause THIS player without calling
+    // getInstance() again (which can re-register it with the SDK).
+    let playerVideo: any = null;
     const iframe = iframeRef.current;
 
     // Wait for the iframe's own `load` event, not just the SDK script.
@@ -156,6 +159,7 @@ const VdoPlayer = ({
         }
         const player = W.VdoPlayer.getInstance(iframeRef.current);
         const v = player?.video; // HTMLVideoElement-like API
+        playerVideo = v;
         if (!v) {
           setError("Failed to load the secure video player");
           return;
@@ -228,6 +232,28 @@ const VdoPlayer = ({
       disposed = true;
       clearTimeout(stuckTimer);
       if (cleanup) cleanup();
+
+      // VdoCipher's SDK counts every initialised player as an "active video"
+      // across the whole page, and dropping our event listeners does NOT
+      // release it. A lesson switch or a guide<->lesson toggle therefore left
+      // the outgoing player registered and still playing, so the incoming one
+      // was the SECOND active video and failed with
+      // "Error 6006: Multiple active videos."
+      //
+      // Pause the outgoing video, then blank the iframe so the embed unloads
+      // synchronously here — before the next instance initialises — leaving
+      // exactly one active video. React removes this iframe on unmount anyway;
+      // this only guarantees the teardown lands in time.
+      try {
+        playerVideo?.pause?.();
+      } catch {
+        /* the SDK may not have attached yet — nothing to pause */
+      }
+      try {
+        iframe.src = "about:blank";
+      } catch {
+        /* ignore */
+      }
     };
   }, [embed, setDuration, setWatchedSegments]);
 
